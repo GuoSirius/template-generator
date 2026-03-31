@@ -1,0 +1,19 @@
+snippets:
+  - name: "Hero 横幅"
+    version: "1.0.0"
+    description: "大图横幅，适合产品主视觉展示，包含标题、副标题和行动按钮"
+    thumbnail: "hero-banner/thumbnail.png"
+    folder: "hero-banner"
+    tags: ["banner", "hero", "顶部"]
+  - name: "特性卡片"
+    version: "1.0.0"
+    description: "多功能特性展示卡片，支持多个条目列表，适合展示产品功能亮点"
+    thumbnail: "feature-card/thumbnail.png"
+    folder: "feature-card"
+    tags: ["card", "features", "特性"]
+  - name: "页脚信息"
+    version: "1.0.0"
+    description: "简洁页脚，包含版权信息和快捷链接"
+    thumbnail: "site-footer/thumbnail.png"
+    folder: "site-footer"
+    tags: ["footer", "页脚"]

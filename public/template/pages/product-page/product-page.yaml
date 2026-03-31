@@ -1,0 +1,17 @@
+name: "产品页模板"
+description: "适用于产品介绍页、功能展示页"
+seo:
+  title: "我的产品页 - 功能介绍"
+  keywords: "产品, 功能, 特性, 介绍"
+  description: "这是一个产品页的默认描述,详细介绍产品的功能和特性"
+placeholders:
+  - name: "product-overview"
+    description: "产品概览区域，展示产品核心价值主张"
+    default: '<section class="placeholder-default" style="min-height:350px;background:#1E293B;">产品概览区域</section>'
+  - name: "feature-list"
+    description: "功能列表区域，详细展示产品功能特性"
+    default: '<section class="placeholder-default" style="min-height:300px;background:#1E293B;">功能列表区域</section>'
+  - name: "testimonials"
+    description: "用户评价区域，展示用户使用反馈"
+    default: '<section class="placeholder-default" style="min-height:250px;background:#1E293B;">用户评价区域</section>'
+

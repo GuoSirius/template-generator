@@ -1,0 +1,26 @@
+className: "feature-card"
+defaultPlaceholder: "features-section"
+defaults:
+  columns: 3
+formSchema:
+  type: "array"
+  fields:
+    - key: "title"
+      label: "特性标题"
+      type: "text"
+      default: ""
+      placeholder: "请输入特性标题"
+      required: true
+    - key: "description"
+      label: "特性描述"
+      type: "textarea"
+      default: ""
+      placeholder: "请输入特性描述"
+      required: true
+sampleData:
+  - title: "高性能"
+    description: "基于最新的技术架构，确保应用的快速响应和流畅体验"
+  - title: "安全可靠"
+    description: "多层安全防护机制，保障您的数据安全和隐私"
+  - title: "易于扩展"
+    description: "模块化设计，支持灵活的功能扩展和自定义配置"

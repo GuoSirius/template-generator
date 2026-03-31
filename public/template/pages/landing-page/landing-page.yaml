@@ -1,0 +1,17 @@
+name: "落地页模板"
+description: "适用于产品落地页、营销页面"
+seo:
+  title: "我的落地页 - 产品介绍"
+  keywords: "产品, 落地页, 营销, 简介"
+  description: "这是一个产品落地页的默认描述,您可以在这里填写页面的详细描述信息"
+placeholders:
+  - name: "hero-section"
+    description: "顶部横幅区域，适合放置产品主视觉、标题和 CTA 按钮"
+    default: '<section class="placeholder-default" style="min-height:400px;background:#1E293B;">Hero 横幅区域</section>'
+  - name: "features-section"
+    description: "特性展示区域，适合放置产品功能亮点"
+    default: '<section class="placeholder-default" style="min-height:300px;background:#1E293B;">特性展示区域</section>'
+  - name: "footer-section"
+    description: "底部页脚区域，适合放置版权信息和链接"
+    default: '<footer class="placeholder-default" style="min-height:120px;background:#1E293B;">页脚区域</footer>'
+

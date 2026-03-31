@@ -1,0 +1,14 @@
+className: "site-footer"
+defaultPlaceholder: "footer-section"
+defaults:
+  copyright: "© 2026 Template Generator. All rights reserved."
+formSchema:
+  type: "object"
+  fields:
+    - key: "copyright"
+      label: "版权信息"
+      type: "text"
+      default: "© 2026 Template Generator. All rights reserved."
+      placeholder: "请输入版权信息"
+sampleData:
+  copyright: "© 2026 Template Generator. All rights reserved."

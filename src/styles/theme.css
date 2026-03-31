@@ -1,0 +1,54 @@
+/* Element Plus 暗色主题覆盖 */
+html.dark {
+  --el-bg-color: #1E293B;
+  --el-bg-color-overlay: #1E293B;
+  --el-bg-color-page: #0F172A;
+  --el-text-color-primary: #F8FAFC;
+  --el-text-color-regular: #CBD5E1;
+  --el-text-color-secondary: #94A3B8;
+  --el-text-color-placeholder: #64748B;
+  --el-border-color: #334155;
+  --el-border-color-light: #334155;
+  --el-border-color-lighter: #1E293B;
+  --el-border-color-extra-light: #1E293B;
+  --el-fill-color: #1E293B;
+  --el-fill-color-light: #334155;
+  --el-fill-color-lighter: #0F172A;
+  --el-fill-color-extra-light: #0F172A;
+  --el-fill-color-blank: #1E293B;
+  --el-mask-color: rgba(0, 0, 0, 0.7);
+  --el-color-primary: #38BDF8;
+  --el-color-primary-light-3: #38BDF8;
+  --el-color-primary-light-5: #0EA5E9;
+  --el-color-primary-light-7: #0284C7;
+  --el-color-primary-light-8: #0369A1;
+  --el-color-primary-light-9: #075985;
+  --el-color-primary-dark-2: #0284C7;
+  --el-box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+  --el-box-shadow-light: 0px 2px 8px rgba(0, 0, 0, 0.2);
+  --el-card-bg-color: #1E293B;
+}
+
+/* 亮色主题调整 */
+html.light {
+  --el-bg-color: #FFFFFF;
+  --el-bg-color-overlay: #FFFFFF;
+  --el-bg-color-page: #F8FAFC;
+  --el-text-color-primary: #0F172A;
+  --el-text-color-regular: #475569;
+  --el-text-color-secondary: #64748B;
+  --el-text-color-placeholder: #94A3B8;
+  --el-border-color: #E2E8F0;
+  --el-border-color-light: #E2E8F0;
+  --el-border-color-lighter: #F1F5F9;
+  --el-fill-color: #F1F5F9;
+  --el-fill-color-light: #F8FAFC;
+  --el-color-primary: #0EA5E9;
+  --el-color-primary-light-3: #38BDF8;
+  --el-color-primary-light-5: #7DD3FC;
+  --el-color-primary-light-7: #BAE6FD;
+  --el-color-primary-light-8: #E0F2FE;
+  --el-color-primary-light-9: #F0F9FF;
+  --el-color-primary-dark-2: #0284C7;
+  --el-card-bg-color: #FFFFFF;
+}

@@ -1,0 +1,11 @@
+<section class="feature-card" style="padding: 60px 40px;">
+  <h2 style="text-align: center; font-size: 32px; font-weight: 700; margin-bottom: 40px; color: #F8FAFC;">功能特性</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1200px; margin: 0 auto;">
+    <% features.forEach(function(feature) { %>
+    <div style="background: #1E293B; border-radius: 12px; padding: 32px; border: 1px solid #334155; transition: transform 0.2s, box-shadow 0.2s;">
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #38BDF8;"><%= feature.title %></h3>
+      <p style="font-size: 14px; color: #94A3B8; line-height: 1.6;"><%= feature.description %></p>
+    </div>
+    <% }) %>
+  </div>
+</section>

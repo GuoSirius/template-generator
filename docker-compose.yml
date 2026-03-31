@@ -1,0 +1,11 @@
+services:
+  template-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: template-generator
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai

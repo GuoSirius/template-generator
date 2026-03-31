@@ -1,0 +1,4 @@
+@import './variables.css';
+
+/* UnoCSS reset */
+@unocss all;

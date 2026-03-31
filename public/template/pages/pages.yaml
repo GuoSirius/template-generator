@@ -1,0 +1,11 @@
+templates:
+  - name: "落地页模板"
+    version: "1.0.0"
+    description: "适用于产品推广、活动宣传的现代落地页，包含顶部横幅、特性展示和页脚区域"
+    thumbnail: "landing-page/thumbnail.png"
+    folder: "landing-page"
+  - name: "产品介绍模板"
+    version: "1.0.0"
+    description: "适合产品功能展示与介绍，包含产品概览、功能列表和用户评价区域"
+    thumbnail: "product-page/thumbnail.png"
+    folder: "product-page"
