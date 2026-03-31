@@ -34,10 +34,10 @@ const appStore = useAppStore()
 .app-main {
   flex: 1;
   margin-left: var(--sidebar-width);
-  padding: 24px;
+  padding: 20px;
   transition: margin-left var(--transition-duration) ease;
   min-height: calc(100vh - var(--header-height));
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .app-main.sidebar-collapsed {

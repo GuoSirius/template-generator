@@ -4,6 +4,7 @@ export function buildPreviewHtml(
   seoTitle: string = '',
   seoDescription: string = '',
   seoKeywords: string = '',
+  customJs: string = '',
 ): string {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -21,6 +22,7 @@ export function buildPreviewHtml(
 </head>
 <body>
   ${content}
+  ${customJs ? `<script>${customJs}<\/script>` : ''}
 </body>
 </html>`
 }

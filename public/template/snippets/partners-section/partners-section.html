@@ -1,0 +1,79 @@
+<div class="partners-section">
+  <div class="partners-header">
+    <h2 class="partners-title">{{ header.title }}</h2>
+    <p class="partners-subtitle">{{ header.subtitle }}</p>
+  </div>
+  <div class="partners-grid">
+    {{#each partners }}
+    <div class="partner-item">
+      {{#if logo }}
+      <img src="{{ logo }}" alt="{{ name }}" class="partner-logo">
+      {{ else }}
+      <div class="partner-logo-placeholder">{{ name }}</div>
+      {{/if}}
+      <span class="partner-name">{{ name }}</span>
+    </div>
+    {{/each}}
+  </div>
+</div>
+
+<style>
+.partners-section {
+  padding: 60px 20px;
+  background: #f8f9fa;
+  text-align: center;
+}
+.partners-header {
+  margin-bottom: 40px;
+}
+.partners-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+.partners-subtitle {
+  font-size: 16px;
+  color: #6c757d;
+}
+.partners-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.partner-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+.partner-item:hover {
+  transform: translateY(-4px);
+}
+.partner-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+.partner-logo-placeholder {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #6c757d;
+}
+.partner-name {
+  font-size: 14px;
+  color: #495057;
+}
+</style>

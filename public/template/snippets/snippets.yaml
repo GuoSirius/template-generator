@@ -17,3 +17,9 @@ snippets:
     thumbnail: "site-footer/thumbnail.png"
     folder: "site-footer"
     tags: ["footer", "页脚"]
+  - name: "合作伙伴"
+    version: "1.0.0"
+    description: "展示合作伙伴Logo和信息，支持对象数据+列表数据组合"
+    thumbnail: "partners-section/thumbnail.png"
+    folder: "partners-section"
+    tags: ["partners", "logo", "合作"]

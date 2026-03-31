@@ -7,52 +7,50 @@
         <el-step title="配置片段" icon="Puzzle" />
       </el-steps>
       <div class="header-actions">
+        <button class="icon-btn btn-js" title="定制 JavaScript" @click="showJsDialog = true">
+          <Code :size="16" />
+          <span class="btn-label">JS</span>
+        </button>
         <button class="icon-btn btn-css" title="定制 CSS" @click="showCssDialog = true">
           <Paintbrush :size="16" />
           <span class="btn-label">CSS</span>
         </button>
-        <button class="icon-btn btn-preview" title="预览效果" @click="showQuickPreview = true">
+        <button class="icon-btn btn-preview" title="预览效果" @click="openQuickPreview">
           <Eye :size="16" />
-          <span class="btn-label">预览</span>
+          <span class="btn-label">应用并预览</span>
         </button>
       </div>
     </div>
 
-    <!-- 项目名称输入 - 所有步骤可见 -->
-    <div class="name-input-inline">
-      <span class="name-label">项目名称 <span class="required-mark">*</span></span>
-      <el-form :model="nameForm" :rules="nameRules" ref="nameFormRef" class="name-form-inline">
-        <el-form-item prop="name">
-          <el-input
-            v-model="nameForm.name"
-            placeholder="请输入项目名称"
-            size="default"
-            clearable
-            @change="onNameChange"
-            style="width: 240px;"
-          />
-        </el-form-item>
-      </el-form>
-      <el-alert
-        v-if="!projectNameValid && currentStep === 1"
-        title="请输入项目名称"
-        type="warning"
-        :closable="false"
-        show-icon
-      />
-    </div>
+    <!-- 主要内容区域 - 可滚动 -->
+    <div class="main-content">
 
-    <!-- Step 1: 模板选择 -->
-    <div v-if="currentStep === 1" class="step-content">
+      <!-- Step 1: 模板选择 -->
+      <div v-if="currentStep === 1" class="step-content">
 
       <div class="step1-layout">
         <!-- 左侧：模板选择 + SEO -->
         <div class="step1-left">
           <div class="section-card">
+            <h3 class="section-title">项目名称 <span class="required-mark">*</span></h3>
+            <el-form :model="nameForm" :rules="nameRules" ref="nameFormRef" class="name-form-inline">
+              <el-form-item prop="name">
+                <el-input
+                  v-model="nameForm.name"
+                  placeholder="请输入项目名称"
+                  size="default"
+                  clearable
+                  @change="onNameChange"
+                  style="width: 100%;"
+                />
+              </el-form-item>
+            </el-form>
+          </div>
+          <div class="section-card">
             <h3 class="section-title">选择模板 <span class="required-mark">*</span></h3>
             <TemplateDropdown
               v-model="templateFolder"
-              :templates="templateStore.templates"
+              :templates="validTemplates"
             />
             <TemplateInfo
               :template="templateStore.currentTemplate"
@@ -83,17 +81,11 @@
           </div>
         </div>
       </div>
-      <div class="step-footer">
-        <button class="action-btn btn-primary" :disabled="!templateFolder" @click="goToStep2">
-          下一步
-          <ChevronRight :size="18" />
-        </button>
-      </div>
     </div>
 
     <!-- Step 2: 片段配置 -->
     <div v-if="currentStep === 2" class="step-content">
-      <div class="step2-layout" :class="{ collapsed: previewCollapsed }">
+      <div class="step2-layout">
         <!-- 第一列：片段列表 -->
         <div class="col-snippets">
           <h3 class="col-title">片段列表</h3>
@@ -110,6 +102,10 @@
               @reorder="onReorderSnippets"
             />
           </div>
+          <button class="add-snippet-btn" @click="showAddDialog = true">
+            <Plus :size="18" />
+            <span>添加片段</span>
+          </button>
         </div>
 
         <!-- 第二列：片段配置 -->
@@ -137,52 +133,29 @@
             </el-tab-pane>
           </el-tabs>
         </div>
-
-        <!-- 第三列：完整预览 -->
-        <div class="col-preview" :class="{ hidden: previewCollapsed }">
-          <div class="preview-header">
-            <span class="col-title">完整预览</span>
-            <div class="preview-actions">
-              <button class="icon-btn btn-preview" title="全屏预览" @click="togglePreviewFullscreen">
-                <Maximize2 v-if="!isPreviewFullscreen" :size="14" />
-                <Minimize2 v-else :size="14" />
-              </button>
-              <button class="icon-btn btn-secondary" title="折叠预览" @click="previewCollapsed = true">
-                <PanelRightClose :size="14" />
-              </button>
-            </div>
-          </div>
-          <div class="preview-body" ref="fullPreviewRef">
-            <PreviewIframe
-              v-if="fullPreviewHtml"
-              :srcdoc="fullPreviewHtml"
-              :show-toolbar="false"
-            />
-          </div>
-        </div>
       </div>
+    </div>
+    </div>
 
-      <!-- 折叠预览时的展开按钮 -->
-      <button v-if="previewCollapsed" class="expand-preview-btn" @click="previewCollapsed = false">
-        <PanelRightOpen :size="16" />
-        <span>展开预览</span>
-      </button>
-
-      <div class="step-footer">
+    <!-- 固定底部操作栏 -->
+    <div class="bottom-actions">
+      <div v-if="currentStep === 1" class="action-left">
+        <button class="action-btn btn-primary" :disabled="!templateFolder" @click="goToStep2">
+          下一步
+          <ChevronRight :size="18" />
+        </button>
+      </div>
+      <div v-else class="action-left">
         <button class="action-btn btn-secondary" @click="goToStep1">
           <ChevronLeft :size="18" />
           上一步
         </button>
-        <div class="footer-actions">
-          <button class="action-btn btn-apply" @click="onApplyPreview">
-            <Play :size="18" />
-            应用预览
-          </button>
-          <button class="action-btn btn-primary" @click="onSaveProject">
-            <Save :size="18" />
-            保存并完成
-          </button>
-        </div>
+      </div>
+      <div v-if="currentStep === 2" class="action-right">
+        <button class="action-btn btn-primary" @click="onSaveProject">
+          <Save :size="18" />
+          保存并完成
+        </button>
       </div>
     </div>
 
@@ -198,42 +171,48 @@
     <CustomCssDialog
       v-model:visible="showCssDialog"
       :model-value="localCustomCss"
-      :preview-html="cssPreviewBaseHtml"
+      :template-html="templateStore.currentHtml"
+      :snippet-instances="snippetInstances"
+      :seo-title="project?.seo.title || ''"
       @update:model-value="localCustomCss = $event"
       @save="onSaveCss"
     />
 
+    <!-- 定制 JavaScript 对话框 -->
+    <CustomJsDialog
+      v-model:visible="showJsDialog"
+      :model-value="localCustomJs"
+      :template-html="templateStore.currentHtml"
+      :snippet-instances="snippetInstances"
+      :custom-css="localCustomCss"
+      :seo-title="project?.seo.title || ''"
+      @update:model-value="localCustomJs = $event"
+      @save="onSaveJs"
+    />
+
     <!-- 快速预览对话框 -->
-    <el-dialog
+    <PreviewDialog
       v-model="showQuickPreview"
+      :srcdoc="quickPreviewHtml"
       title="页面预览"
-      width="85%"
-      top="3vh"
-      destroy-on-close
-    >
-      <PreviewIframe
-        v-if="quickPreviewHtml"
-        :srcdoc="quickPreviewHtml"
-        :show-toolbar="false"
-        style="height: 75vh;"
-      />
-    </el-dialog>
+      :height="isFullscreen ? 'calc(100vh - 120px)' : '75vh'"
+    />
 
     <!-- 保存确认对话框 -->
     <SaveConfirmDialog
       v-model="showSaveConfirm"
       @goto-list="onGoToList"
       @stay="showSaveConfirm = false"
+      @new-create="onNewCreate"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import {
-  Files, Puzzle, Paintbrush, Eye, ChevronRight, ChevronLeft,
-  Save, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, FileCode2, Play,
+import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
+import { Paintbrush, Eye, ChevronRight, ChevronLeft,
+  Save, FileCode2, Code, Plus,
 } from 'lucide-vue-next'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/project'
@@ -247,14 +226,15 @@ import SnippetConfig from '@/components/snippet/SnippetConfig.vue'
 import DynamicForm from '@/components/snippet/DynamicForm.vue'
 import SnippetAddDialog from '@/components/snippet/SnippetAddDialog.vue'
 import CustomCssDialog from '@/components/css/CustomCssDialog.vue'
+import CustomJsDialog from '@/components/js/CustomJsDialog.vue'
 import SaveConfirmDialog from '@/components/common/SaveConfirmDialog.vue'
 import PreviewIframe from '@/components/preview/PreviewIframe.vue'
-import { useFullscreen } from '@/composables/use-fullscreen'
 import {
   compileTemplate, resolveSnippetData, wrapWithContainer,
   buildSpacingStyle, replacePlaceholders,
 } from '@/engines/template-engine'
 import { buildPreviewHtml, buildSnippetPreviewHtml } from '@/engines/preview-renderer'
+import { getSnippetHtml } from '@/engines/yaml-parser'
 import type { SnippetConfig as SnippetConfigType, SnippetMeta, Spacing } from '@/types'
 
 const router = useRouter()
@@ -262,7 +242,6 @@ const route = useRoute()
 const projectStore = useProjectStore()
 const templateStore = useTemplateStore()
 const snippetStore = useSnippetStore()
-const { isFullscreen: isPreviewFullscreen, toggleFullscreen } = useFullscreen()
 
 // State
 const currentStep = ref(1)
@@ -270,13 +249,15 @@ const templateFolder = ref('')
 const seoInfo = ref({ title: '', keywords: '', description: '' })
 const selectedSnippetId = ref<string | null>(null)
 const configTab = ref('props')
-const previewCollapsed = ref(false)
 const showAddDialog = ref(false)
 const showCssDialog = ref(false)
+const showJsDialog = ref(false)
 const showQuickPreview = ref(false)
 const showSaveConfirm = ref(false)
 const localCustomCss = ref('')
-const fullPreviewRef = ref<HTMLElement>()
+const localCustomJs = ref('')
+const quickPreviewKey = ref(0)
+const isFullscreen = ref(false)
 const nameFormRef = ref()
 const nameForm = ref({ name: '' })
 const projectNameValid = ref(false)
@@ -288,6 +269,29 @@ const nameRules = {
   ],
 }
 
+// 记录初始状态用于检测变动
+const initialState = ref('')
+
+// 检测数据是否有变动
+function checkDataChanged() {
+  if (!project.value) return false
+  const currentState = JSON.stringify({
+    name: nameForm.value.name,
+    templateId: templateFolder.value,
+    seo: seoInfo.value,
+    customCss: localCustomCss.value,
+    customJs: localCustomJs.value,
+    snippets: snippetInstances.value.map(s => ({
+      id: s.id,
+      snippetId: s.snippetId,
+      enabled: s.enabled,
+      data: s.data,
+      properties: s.properties,
+    })),
+  })
+  return initialState.value !== currentState
+}
+
 // Computed
 const project = computed(() => projectStore.currentProject)
 const snippetInstances = computed(() => project.value?.snippetInstances || [])
@@ -296,6 +300,11 @@ const placeholderNames = computed(() => placeholders.value.map(p => p.name))
 const existingSnippetIds = computed(() => snippetInstances.value.map(s => s.snippetId))
 const isSeoFilled = computed(() => {
   return !!(seoInfo.value.title || seoInfo.value.keywords || seoInfo.value.description)
+})
+
+// 只返回有效的模板（排除 disabled: true 的模板）
+const validTemplates = computed(() => {
+  return templateStore.templates.filter(t => !t.disabled)
 })
 
 const selectedSnippetConfig = computed<SnippetConfigType | null>(() => {
@@ -341,28 +350,31 @@ const selectedSnippetData = computed(() => {
   return selectedInstance.value.data
 })
 
-// Step1: template preview
+// Step1: template preview (实时预览)
 const templatePreviewHtml = computed(() => {
   if (!templateStore.currentHtml) return ''
   return buildPreviewHtml(templateStore.currentHtml, localCustomCss.value)
 })
 
-// Step2: full preview (all enabled snippets rendered)
+// Step2: full preview (点击"应用并预览"按钮时触发)
 const fullPreviewHtml = computed(() => {
   if (!project.value || !templateStore.currentHtml) return ''
+  
   const enabledInstances = snippetInstances.value.filter(s => s.enabled)
+  
+  if (enabledInstances.length === 0) {
+    return buildPreviewHtml(templateStore.currentHtml, localCustomCss.value)
+  }
+  
   const renderedSnippets = enabledInstances.map(inst => {
     const config = snippetStore.configs.get(inst.snippetId)
     const html = snippetStore.getSnippetHtml(inst.snippetId)
     if (!html) return null
     const data = resolveSnippetData(inst.data as Record<string, any>, config?.sampleData || {})
 
-    console.log('[Preview] Rendering snippet:', inst.snippetId, 'data:', data)
-
     let compiled = html
     try {
       if (config?.formSchema.type === 'array') {
-        // 数组类型: 将数据作为数组传递
         compiled = compileTemplate(html, { features: Array.isArray(data) ? data : [data] })
       } else {
         compiled = compileTemplate(html, { ...(data as Record<string, any>) })
@@ -376,9 +388,8 @@ const fullPreviewHtml = computed(() => {
     return { placeholder: inst.properties.placeholder, html: wrapped }
   }).filter(Boolean) as { placeholder: string; html: string }[]
 
-  console.log('[Preview] Rendered snippets count:', renderedSnippets.length)
-
   let finalHtml = replacePlaceholders(templateStore.currentHtml, renderedSnippets)
+  
   return buildPreviewHtml(
     finalHtml,
     localCustomCss.value,
@@ -391,12 +402,6 @@ const fullPreviewHtml = computed(() => {
 // Quick preview (same as full preview)
 const quickPreviewHtml = computed(() => fullPreviewHtml.value)
 
-// CSS dialog preview base
-const cssPreviewBaseHtml = computed(() => {
-  if (!templateStore.currentHtml) return ''
-  return buildPreviewHtml(templateStore.currentHtml, '', project.value?.seo.title)
-})
-
 // Watchers
 watch(templateFolder, async (folder) => {
   if (folder) {
@@ -404,6 +409,10 @@ watch(templateFolder, async (folder) => {
     // 加载模板后,填充 SEO 默认值
     if (templateStore.currentConfig?.seo && !isSeoFilled.value) {
       seoInfo.value = { ...templateStore.currentConfig.seo }
+    }
+    // SEO 标题默认和项目名称保持一致
+    if (nameForm.value.name && !seoInfo.value.title) {
+      seoInfo.value.title = nameForm.value.name
     }
   }
 })
@@ -430,12 +439,23 @@ watch(seoInfo, (val) => {
 
 watch(nameForm, (val) => {
   projectNameValid.value = val.name.trim().length >= 2
+  // 如果 SEO 标题为空，则和项目名称保持一致
+  if (val.name && !seoInfo.value.title) {
+    seoInfo.value.title = val.name
+  }
 }, { deep: true })
 
 // Methods
 function goToStep1() {
   currentStep.value = 1
+  // 返回Step1时更新项目状态
   if (project.value) {
+    projectStore.updateCurrentProject({
+      name: nameForm.value.name.trim(),
+      templateId: templateFolder.value,
+      seo: seoInfo.value,
+      currentStep: 1,
+    })
     projectStore.setStep(1)
   }
 }
@@ -463,18 +483,26 @@ async function goToStep2() {
     return
   }
 
-  // 如果是新项目,创建项目
+  const projectName = nameForm.value.name.trim()
+
+  // 如果没有项目，先创建
   if (!project.value) {
-    const projectName = nameForm.value.name.trim()
     const newProject = projectStore.createProject(projectName, templateFolder.value)
     await projectStore.loadProject(newProject.id)
   }
 
-  currentStep.value = 2
+  // 无论新建还是已有，都更新基本信息
   if (project.value) {
-    projectStore.updateCurrentProject({ templateId: templateFolder.value })
+    projectStore.updateCurrentProject({
+      name: projectName,
+      templateId: templateFolder.value,
+      seo: seoInfo.value,
+      currentStep: 2,
+    })
     projectStore.setStep(2)
   }
+
+  currentStep.value = 2
 }
 
 async function onSelectSnippet(id: string) {
@@ -491,15 +519,45 @@ async function onSelectSnippet(id: string) {
   }
 }
 
-function onAddSnippet(folder: string) {
+function onAddSnippet(folders: string | string[]) {
   if (!project.value) return
-  const config = snippetStore.configs.get(folder)
-  const defaultPlaceholder = config?.defaultPlaceholder || ''
-  projectStore.addSnippetInstance(folder, folder, defaultPlaceholder)
+  const folderList = Array.isArray(folders) ? folders : [folders]
+  let lastInstanceId = ''
+
+  for (const folder of folderList) {
+    const config = snippetStore.configs.get(folder)
+    const defaultPlaceholder = config?.defaultPlaceholder || ''
+    const newInstance = projectStore.addSnippetInstance(folder, folder, defaultPlaceholder)
+    // 加载新片段的详细信息
+    snippetStore.loadSnippetDetail(folder)
+    lastInstanceId = newInstance.id
+  }
+
+  // 自动选中最后添加的片段
+  selectedSnippetId.value = lastInstanceId
+  // 切换到数据录入 tab
+  configTab.value = 'data'
 }
 
 function onCopySnippet(id: string) {
-  projectStore.duplicateSnippetInstance(id)
+  const snippet = snippetInstances.value.find(s => s.id === id)
+  const snippetName = snippetStore.snippets.find(s => s.folder === snippet?.snippetId)?.name || '片段'
+  
+  ElMessageBox.confirm(`确定要复制「${snippetName}」吗？`, '确认复制', {
+    confirmButtonText: '复制',
+    cancelButtonText: '取消',
+    type: 'info',
+  }).then(() => {
+    const copied = projectStore.duplicateSnippetInstance(id)
+    if (copied) {
+      // 选中新复制的片段
+      selectedSnippetId.value = copied.id
+      // 切换到数据 tab
+      configTab.value = 'data'
+    }
+  }).catch(() => {
+    // 用户取消
+  })
 }
 
 function onDeleteSnippet(id: string) {
@@ -542,25 +600,45 @@ function onSaveCss(css: string) {
   ElMessage.success('CSS 已应用')
 }
 
-function togglePreviewFullscreen() {
-  if (fullPreviewRef.value) {
-    toggleFullscreen(fullPreviewRef.value)
+function onSaveJs(js: string) {
+  localCustomJs.value = js
+  if (project.value) {
+    projectStore.setCustomJs(js)
   }
+  ElMessage.success('JavaScript 已应用')
+}
+
+function openQuickPreview() {
+  // 预加载所有snippet的HTML
+  const snippetIds = [...new Set(snippetInstances.value.map(i => i.snippetId))]
+  const loadPromises = snippetIds.map(async (id) => {
+    // 确保config和HTML都被加载
+    if (!snippetStore.configs.has(id)) {
+      await snippetStore.loadSnippetDetail(id)
+    }
+    // 如果HTML缓存为空，手动加载
+    if (!snippetStore.getSnippetHtml(id)) {
+      const html = await getSnippetHtml(id)
+      // 更新到缓存
+      snippetStore.htmlCache.set(id, html)
+    }
+  })
+  
+  // 等待所有加载完成后打开预览
+  Promise.all(loadPromises).then(() => {
+    // 触发重新渲染
+    quickPreviewKey.value++
+    showQuickPreview.value = true
+  }).catch(e => {
+    console.error('Failed to load snippets:', e)
+    quickPreviewKey.value++
+    showQuickPreview.value = true
+  })
 }
 
 function onTabChange(tabName: string | number) {
   if (selectedSnippetId.value && typeof tabName === 'string' && (tabName === 'props' || tabName === 'data')) {
     projectStore.setSnippetTab(selectedSnippetId.value, tabName as 'props' | 'data')
-  }
-}
-
-async function onApplyPreview() {
-  // 应用预览: 强制更新预览HTML
-  // fullPreviewHtml 是计算属性,数据变化会自动重新计算
-  // 这里只需要确保数据已保存到 store
-  if (project.value) {
-    await projectStore.saveCurrentProject()
-    ElMessage.success('预览已更新')
   }
 }
 
@@ -575,6 +653,19 @@ function onGoToList() {
   router.push('/')
 }
 
+async function onNewCreate(copyData: boolean) {
+  if (copyData && project.value) {
+    // 复制当前数据新建
+    const copy = await projectStore.duplicateProject(project.value.id)
+    if (copy) {
+      router.push(`/create/${copy.id}?mode=resume`)
+      return
+    }
+  }
+  // 清空所有数据新建
+  router.push('/create')
+}
+
 // Init
 async function init() {
   const projectId = route.params.id as string
@@ -585,7 +676,8 @@ async function init() {
     if (project.value) {
       templateFolder.value = project.value.templateId
       seoInfo.value = { ...project.value.seo }
-      localCustomCss.value = project.value.customCss
+      localCustomCss.value = project.value.customCss || ''
+      localCustomJs.value = project.value.customJs || ''
       nameForm.value.name = project.value.name
       projectNameValid.value = true
       // 根据项目当前步骤或模式设置步骤
@@ -606,6 +698,11 @@ async function init() {
     snippetStore.loadSnippets(),
   ])
 
+  // 自动选择第一个有效模板
+  if (!templateFolder.value && validTemplates.value.length > 0) {
+    templateFolder.value = validTemplates.value[0].folder
+  }
+
   // If we have a template selected, load its config
   if (templateFolder.value) {
     await templateStore.selectTemplate(templateFolder.value)
@@ -624,29 +721,67 @@ async function init() {
       selectedSnippetId.value = snippetInstances.value[0].id
     }
   }
+
+  // 初始化完成后记录初始状态
+  initialState.value = JSON.stringify({
+    name: nameForm.value.name,
+    templateId: templateFolder.value,
+    seo: seoInfo.value,
+    customCss: localCustomCss.value,
+    customJs: localCustomJs.value,
+    snippets: snippetInstances.value.map(s => ({
+      id: s.id,
+      snippetId: s.snippetId,
+      enabled: s.enabled,
+      data: s.data,
+      properties: s.properties,
+    })),
+  })
 }
 
 onMounted(() => {
   init()
+  // 设置离开页面确认
+  onBeforeRouteLeave(async (_to, _from) => {
+    if (checkDataChanged()) {
+      try {
+        await ElMessageBox.confirm(
+          '您有未保存的更改，确定要离开吗？',
+          '离开确认',
+          {
+            confirmButtonText: '离开',
+            cancelButtonText: '取消',
+            type: 'warning',
+          }
+        )
+        return true
+      } catch {
+        return false
+      }
+    }
+    return true
+  })
 })
 </script>
 
 <style scoped>
 .project-create-view {
-  max-width: 1600px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: -20px;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: calc(100vh - var(--header-height, 56px));
+  overflow: hidden;
 }
 
 .create-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-  gap: 12px;
+  padding: 12px 20px;
+  background: var(--bg-primary);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .create-header :deep(.el-steps) {
@@ -690,8 +825,9 @@ onMounted(() => {
   filter: brightness(1.15);
 }
 
+.btn-js { background: #8B5CF6; }
 .btn-css { background: #F59E0B; }
-.btn-preview { background: #22C55E; }
+.btn-preview { background: #10B981; }
 .btn-secondary { background: #475569; }
 .btn-apply { background: #10B981; }
 
@@ -704,20 +840,34 @@ onMounted(() => {
   font-size: 12px;
 }
 
-/* Step content */
+/* Step content - 不滚动，由子元素控制 */
 .step-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 16px 20px;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
 }
 
-.name-input-inline {
+.name-input-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  margin-bottom: 8px;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.name-form {
+  margin: 0;
+}
+
+.name-form :deep(.el-form-item) {
+  margin-bottom: 0;
 }
 
 .name-label {
@@ -742,18 +892,24 @@ onMounted(() => {
   gap: 20px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .step1-left {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: calc(100vh - 220px);
+  min-height: 0;
   overflow-y: auto;
+  flex: 1;
 }
 
 .step1-right {
-  min-height: 500px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
 }
 
 .section-card {
@@ -822,15 +978,10 @@ onMounted(() => {
 /* Step 2 layout */
 .step2-layout {
   display: grid;
-  grid-template-columns: 280px 1fr 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 16px;
   flex: 1;
   min-height: 0;
-  transition: all 0.3s;
-}
-
-.step2-layout.collapsed {
-  grid-template-columns: 280px 1fr;
 }
 
 .col-snippets {
@@ -841,6 +992,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 .col-title {
@@ -853,6 +1005,30 @@ onMounted(() => {
 .snippet-list-wrapper {
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
+}
+
+.add-snippet-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #38BDF8, #0284C7);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.add-snippet-btn:hover {
+  filter: brightness(1.15);
+  transform: scale(1.02);
 }
 
 .col-config {
@@ -860,12 +1036,30 @@ onMounted(() => {
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
-  overflow-y: auto;
-  max-height: calc(100vh - 240px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.col-config :deep(.el-tabs) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .col-config :deep(.el-tabs__header) {
   margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.col-config :deep(.el-tabs__content) {
+  flex: 1;
+  overflow: hidden;
+}
+
+.col-config :deep(.el-tab-pane) {
+  height: 100%;
+  overflow-y: auto;
 }
 
 .col-config :deep(.el-tabs__item) {
@@ -878,20 +1072,6 @@ onMounted(() => {
   justify-content: center;
   padding: 60px 20px;
   color: var(--text-muted);
-}
-
-.col-preview {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transition: all 0.3s;
-}
-
-.col-preview.hidden {
-  display: none;
 }
 
 .preview-header {
@@ -963,12 +1143,38 @@ onMounted(() => {
   position: relative;
 }
 
-/* Footer */
+/* Footer - 固定底部 */
 .step-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: 12px 20px;
+  background: var(--bg-primary);
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color);
+}
+
+/* 主内容区域 */
+.main-content {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 底部操作栏 */
+.bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-primary);
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.action-left,
+.action-right {
+  display: flex;
   gap: 12px;
 }
 
@@ -1002,11 +1208,29 @@ onMounted(() => {
 }
 
 .btn-secondary {
-  background: #475569;
+  background: #3B82F6;
 }
 
 .toolbar-label {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.preview-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-right: 40px;
+}
+
+.preview-dialog-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.preview-dialog-actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

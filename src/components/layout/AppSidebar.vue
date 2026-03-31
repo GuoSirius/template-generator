@@ -56,6 +56,10 @@ const isActive = (item: typeof menuItems[0]) => {
     if (item.path === '/') return route.path === '/'
     return route.path.startsWith(item.path!)
   }
+  // action 项的活跃判断
+  if (item.action === 'create') {
+    return route.path.startsWith('/create')
+  }
   return false
 }
 

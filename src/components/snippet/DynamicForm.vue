@@ -11,13 +11,15 @@
         >
           <el-input
             v-if="field.type === 'text'"
-            v-model="objectData[field.key]"
+            :model-value="objectData[field.key]"
+            @update:model-value="objectData[field.key] = handleInput(field, $event)"
             :placeholder="field.placeholder || ''"
             :maxlength="200"
           />
           <el-input
             v-else-if="field.type === 'textarea'"
-            v-model="objectData[field.key]"
+            :model-value="objectData[field.key]"
+            @update:model-value="objectData[field.key] = handleInput(field, $event)"
             type="textarea"
             :rows="3"
             :placeholder="field.placeholder || ''"
@@ -47,7 +49,8 @@
           />
           <el-input
             v-else-if="field.type === 'image'"
-            v-model="objectData[field.key]"
+            :model-value="objectData[field.key]"
+            @update:model-value="objectData[field.key] = handleInput(field, $event)"
             :placeholder="field.placeholder || '图片 URL'"
           />
         </el-form-item>
@@ -82,12 +85,14 @@
             >
               <el-input
                 v-if="field.type === 'text'"
-                v-model="item[field.key]"
+                :model-value="item[field.key]"
+                @update:model-value="item[field.key] = handleInput(field, $event)"
                 :placeholder="field.placeholder || ''"
               />
               <el-input
                 v-else-if="field.type === 'textarea'"
-                v-model="item[field.key]"
+                :model-value="item[field.key]"
+                @update:model-value="item[field.key] = handleInput(field, $event)"
                 type="textarea"
                 :rows="2"
                 :placeholder="field.placeholder || ''"
@@ -117,7 +122,8 @@
               />
               <el-input
                 v-else-if="field.type === 'image'"
-                v-model="item[field.key]"
+                :model-value="item[field.key]"
+                @update:model-value="item[field.key] = handleInput(field, $event)"
                 :placeholder="field.placeholder || '图片 URL'"
               />
             </el-form-item>
@@ -129,14 +135,160 @@
         <span>添加条目</span>
       </button>
     </template>
+
+    <!-- ObjectWithList type: object + array -->
+    <template v-if="schema.type === 'objectWithList' && formGroups">
+      <div class="object-with-list">
+        <template v-for="group in formGroups" :key="group.name">
+          <!-- Object group -->
+          <div v-if="group.type === 'object'" class="form-group-section">
+            <h4 class="group-title">{{ group.label }}</h4>
+            <el-form label-position="top" size="default">
+              <el-form-item
+                v-for="field in group.fields"
+                :key="field.key"
+                :label="field.label"
+                :required="field.required"
+              >
+                <el-input
+                  v-if="field.type === 'text'"
+                  :model-value="objectData[group.name][field.key]"
+                  @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
+                  :placeholder="field.placeholder || ''"
+                  :maxlength="200"
+                />
+                <el-input
+                  v-else-if="field.type === 'textarea'"
+                  :model-value="objectData[group.name][field.key]"
+                  @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
+                  type="textarea"
+                  :rows="3"
+                  :placeholder="field.placeholder || ''"
+                />
+                <el-input-number
+                  v-else-if="field.type === 'number'"
+                  v-model="objectData[group.name][field.key]"
+                  :min="0"
+                  controls-position="right"
+                  style="width: 100%;"
+                />
+                <el-select
+                  v-else-if="field.type === 'select'"
+                  v-model="objectData[group.name][field.key]"
+                  style="width: 100%;"
+                >
+                  <el-option
+                    v-for="opt in field.options"
+                    :key="opt"
+                    :label="opt"
+                    :value="opt"
+                  />
+                </el-select>
+                <el-color-picker
+                  v-else-if="field.type === 'color'"
+                  v-model="objectData[group.name][field.key]"
+                />
+                <el-input
+                  v-else-if="field.type === 'image'"
+                  :model-value="objectData[group.name][field.key]"
+                  @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
+                  :placeholder="field.placeholder || '图片 URL'"
+                />
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <!-- Array group -->
+          <div v-if="group.type === 'array'" class="form-group-section">
+            <h4 class="group-title">{{ group.label }}</h4>
+            <div class="array-list">
+              <div
+                v-for="(item, index) in objectData[group.name]"
+                :key="index"
+                class="array-item"
+              >
+                <div class="array-item-header">
+                  <span class="array-item-index">{{ group.itemLabel || '条目' }} {{ index + 1 }}</span>
+                  <div class="array-item-actions">
+                    <button class="icon-btn btn-copy" title="复制" @click="copyListItem(group.name, index, group.fields)">
+                      <Copy :size="14" />
+                    </button>
+                    <button class="icon-btn btn-delete" title="删除" @click="removeListItem(group.name, index)">
+                      <Trash2 :size="14" />
+                    </button>
+                  </div>
+                </div>
+                <el-form label-position="top" size="small">
+                  <el-form-item
+                    v-for="field in group.fields"
+                    :key="field.key"
+                    :label="field.label"
+                    :required="field.required"
+                  >
+                    <el-input
+                      v-if="field.type === 'text'"
+                      :model-value="item[field.key]"
+                      @update:model-value="item[field.key] = handleInput(field, $event)"
+                      :placeholder="field.placeholder || ''"
+                    />
+                    <el-input
+                      v-else-if="field.type === 'textarea'"
+                      :model-value="item[field.key]"
+                      @update:model-value="item[field.key] = handleInput(field, $event)"
+                      type="textarea"
+                      :rows="2"
+                      :placeholder="field.placeholder || ''"
+                    />
+                    <el-input-number
+                      v-else-if="field.type === 'number'"
+                      v-model="item[field.key]"
+                      :min="0"
+                      controls-position="right"
+                      style="width: 100%;"
+                    />
+                    <el-select
+                      v-else-if="field.type === 'select'"
+                      v-model="item[field.key]"
+                      style="width: 100%;"
+                    >
+                      <el-option
+                        v-for="opt in field.options"
+                        :key="opt"
+                        :label="opt"
+                        :value="opt"
+                      />
+                    </el-select>
+                    <el-color-picker
+                      v-else-if="field.type === 'color'"
+                      v-model="item[field.key]"
+                    />
+                    <el-input
+                      v-else-if="field.type === 'image'"
+                      :model-value="item[field.key]"
+                      @update:model-value="item[field.key] = handleInput(field, $event)"
+                      :placeholder="field.placeholder || '图片 URL'"
+                    />
+                  </el-form-item>
+                </el-form>
+              </div>
+            </div>
+            <button class="add-item-btn" @click="addListItem(group.name, group.fields)">
+              <Plus :size="16" />
+              <span>添加{{ group.itemLabel || '条目' }}</span>
+            </button>
+          </div>
+        </template>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, reactive, nextTick } from 'vue'
-import { Plus, Copy, Trash2 } from 'lucide-vue-next'
-import type { FormSchema } from '@/types'
-import { getDefaultFormData, getDefaultFormDataList, createEmptyFormData } from '@/engines/form-engine'
+import { reactive, watch, nextTick } from 'vue'
+import { Copy, Trash2, Plus } from 'lucide-vue-next'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import type { FormSchema, FieldDef } from '@/types'
+import { getDefaultFormData, createEmptyFormData, isItemCompleted, isListItemCompleted, getFormFields } from '@/engines/form-engine'
 
 const props = defineProps<{
   schema: FormSchema
@@ -151,9 +303,91 @@ const objectData = reactive<Record<string, any>>({})
 const arrayList = reactive<Record<string, any>[]>([])
 let isInternalUpdate = false
 
+// 获取 formGroups 用于 objectWithList
+const formGroups = props.schema.type === 'objectWithList' ? props.schema.groups : undefined
+
+// 获取需要处理的字段列表
+function getFieldsForSchema(): FieldDef[] {
+  if (props.schema.type === 'objectWithList' && props.schema.groups) {
+    // 返回所有 groups 中的字段
+    const allFields: FieldDef[] = []
+    for (const group of props.schema.groups) {
+      if (group.type === 'array') {
+        allFields.push(...group.fields)
+      }
+    }
+    return allFields
+  }
+  return getFormFields(props.schema)
+}
+
+// 处理字段值的空格
+function processTrim(data: Record<string, any>, fields: FieldDef[]): Record<string, any> {
+  const result: Record<string, any> = {}
+  for (const field of fields) {
+    const value = data[field.key]
+    if (typeof value === 'string') {
+      if (field.trim === true) {
+        result[field.key] = value.trim()
+      } else if (field.trim === 'start') {
+        result[field.key] = value.trimStart()
+      } else if (field.trim === 'end') {
+        result[field.key] = value.trimEnd()
+      } else {
+        result[field.key] = value
+      }
+    } else {
+      result[field.key] = value
+    }
+  }
+  return result
+}
+
+// 实时处理输入框的空格
+function handleInput(field: FieldDef, value: any) {
+  if (field.trim && typeof value === 'string') {
+    if (field.trim === true) {
+      return value.trim()
+    } else if (field.trim === 'start') {
+      return value.trimStart()
+    } else if (field.trim === 'end') {
+      return value.trimEnd()
+    }
+  }
+  return value
+}
+
 function initFromValue() {
   if (isInternalUpdate) return
-  if (props.schema.type === 'object') {
+
+  if (props.schema.type === 'objectWithList') {
+    // objectWithList 类型
+    if (props.modelValue && typeof props.modelValue === 'object' && !Array.isArray(props.modelValue) && Object.keys(props.modelValue).length > 0) {
+      Object.assign(objectData, props.modelValue)
+    } else {
+      const defaults = getDefaultFormData(props.schema)
+      // 初始化每个 group 的数据
+      if (props.schema.groups) {
+        for (const group of props.schema.groups) {
+          if (group.type === 'object') {
+            const objData: Record<string, any> = {}
+            for (const field of group.fields) {
+              objData[field.key] = field.default ?? ''
+            }
+            objectData[group.name] = objData
+          } else if (group.type === 'array') {
+            const arrData: Record<string, any>[] = []
+            const itemData: Record<string, any> = {}
+            for (const field of group.fields) {
+              itemData[field.key] = field.default ?? ''
+            }
+            arrData.push(itemData)
+            objectData[group.name] = arrData
+          }
+        }
+      }
+    }
+  } else if (props.schema.type === 'object') {
     if (props.modelValue && typeof props.modelValue === 'object' && !Array.isArray(props.modelValue) && Object.keys(props.modelValue).length > 0) {
       Object.assign(objectData, props.modelValue)
     } else {
@@ -162,11 +396,12 @@ function initFromValue() {
       Object.assign(objectData, defaults)
     }
   } else {
+    // array 类型：初始为空数组，添加时再创建
     if (Array.isArray(props.modelValue) && props.modelValue.length > 0) {
       arrayList.splice(0, arrayList.length, ...JSON.parse(JSON.stringify(props.modelValue)))
     } else {
-      const defaults = getDefaultFormDataList(props.schema)
-      arrayList.splice(0, arrayList.length, ...JSON.parse(JSON.stringify(defaults)))
+      // 初始为空，不添加默认项
+      arrayList.splice(0, arrayList.length)
     }
   }
 }
@@ -174,63 +409,156 @@ function initFromValue() {
 initFromValue()
 watch(() => props.modelValue, initFromValue, { deep: true })
 
-// Object: watch and emit
-if (props.schema.type === 'object') {
+// 获取所有字段
+const allFields = getFieldsForSchema()
+
+// 包装 emit，处理空格
+function emitWithTrim(val: Record<string, any> | Record<string, any>[]) {
+  // 深拷贝
+  let processed: Record<string, any> | Record<string, any>[]
+  if (Array.isArray(val)) {
+    // 数组类型：处理每一项
+    processed = val.map(item => processTrim(item, allFields))
+  } else {
+    processed = processTrim(val, allFields)
+  }
+  isInternalUpdate = true
+  emit('update:modelValue', JSON.parse(JSON.stringify(processed)))
+  nextTick(() => {
+    isInternalUpdate = false
+  })
+}
+
+// Object/ObjectWithList: watch and emit
+if (props.schema.type === 'object' || props.schema.type === 'objectWithList') {
   watch(objectData, (val) => {
-    isInternalUpdate = true
-    emit('update:modelValue', { ...val })
-    nextTick(() => {
-      isInternalUpdate = false
-    })
+    emitWithTrim(val)
   }, { deep: true })
 }
 
 // Array: watch and emit
 watch(arrayList, (val) => {
   if (props.schema.type === 'array') {
-    isInternalUpdate = true
-    emit('update:modelValue', JSON.parse(JSON.stringify(val)))
-    nextTick(() => {
-      isInternalUpdate = false
-    })
+    emitWithTrim(val)
   }
 }, { deep: true })
 
 function addItem() {
+  // 检查最后一项是否已填完
+  if (arrayList.length > 0) {
+    const lastItem = arrayList[arrayList.length - 1]
+    if (!isItemCompleted(props.schema, lastItem)) {
+      ElMessage.warning('请先填完当前项再添加新项')
+      return
+    }
+  }
   arrayList.push(createEmptyFormData(props.schema))
 }
 
 function removeItem(index: number) {
-  arrayList.splice(index, 1)
+  const item = arrayList[index]
+  // 检查是否有数据
+  const hasData = Object.values(item).some(v => v !== '' && v !== null && v !== undefined)
+  if (hasData) {
+    ElMessageBox.confirm('该数据项存在内容，确认要删除吗？', '确认删除', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }).then(() => {
+      arrayList.splice(index, 1)
+    }).catch(() => {})
+  } else {
+    arrayList.splice(index, 1)
+  }
 }
 
 function copyItem(index: number) {
+  // 检查最后一项是否已填完
+  if (arrayList.length > 0) {
+    const lastItem = arrayList[arrayList.length - 1]
+    if (!isItemCompleted(props.schema, lastItem)) {
+      ElMessage.warning('请先填完当前项再复制新项')
+      return
+    }
+  }
   const copy = JSON.parse(JSON.stringify(arrayList[index]))
   arrayList.splice(index + 1, 0, copy)
+}
+
+// objectWithList 类型的操作
+function addListItem(groupName: string, fields: FieldDef[]) {
+  // 检查最后一项是否已填完
+  const listData = objectData[groupName]
+  if (listData.length > 0) {
+    const lastItem = listData[listData.length - 1]
+    if (!isListItemCompleted(fields, lastItem)) {
+      ElMessage.warning('请先填完当前项再添加新项')
+      return
+    }
+  }
+  const itemData: Record<string, any> = {}
+  for (const field of fields) {
+    itemData[field.key] = field.default ?? ''
+  }
+  objectData[groupName].push(itemData)
+}
+
+function removeListItem(groupName: string, index: number) {
+  const listData = objectData[groupName]
+  const item = listData[index]
+  // 检查是否有数据
+  const hasData = Object.values(item).some(v => v !== '' && v !== null && v !== undefined)
+  if (hasData) {
+    ElMessageBox.confirm('该数据项存在内容，确认要删除吗？', '确认删除', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }).then(() => {
+      objectData[groupName].splice(index, 1)
+    }).catch(() => {})
+  } else {
+    objectData[groupName].splice(index, 1)
+  }
+}
+
+function copyListItem(groupName: string, index: number, fields: FieldDef[]) {
+  // 检查最后一项是否已填完
+  const listData = objectData[groupName]
+  if (listData.length > 0) {
+    const lastItem = listData[listData.length - 1]
+    if (!isListItemCompleted(fields, lastItem)) {
+      ElMessage.warning('请先填完当前项再复制新项')
+      return
+    }
+  }
+  const copy = JSON.parse(JSON.stringify(objectData[groupName][index]))
+  objectData[groupName].splice(index + 1, 0, copy)
 }
 </script>
 
 <style scoped>
+.dynamic-form {
+  padding: 8px 0;
+}
+
 .array-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 500px;
-  overflow-y: auto;
+  gap: 16px;
 }
 
 .array-item {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 14px;
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .array-item-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .array-item-index {
@@ -254,16 +582,22 @@ function copyItem(index: number) {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-  color: white;
+  background: transparent;
+  color: var(--text-muted);
 }
 
 .icon-btn:hover {
-  transform: scale(1.1);
-  brightness: 1.2;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
-.btn-copy { background: #8B5CF6; }
-.btn-delete { background: #EF4444; }
+.btn-copy:hover {
+  color: var(--primary);
+}
+
+.btn-delete:hover {
+  color: #EF4444;
+}
 
 .add-item-btn {
   display: flex;
@@ -274,10 +608,10 @@ function copyItem(index: number) {
   padding: 10px;
   margin-top: 12px;
   border: 2px dashed var(--border-color);
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
-  color: var(--text-secondary);
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -286,5 +620,27 @@ function copyItem(index: number) {
   border-color: var(--primary);
   color: var(--primary);
   background: rgba(56, 189, 248, 0.05);
+}
+
+.object-with-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-group-section {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
 }
 </style>

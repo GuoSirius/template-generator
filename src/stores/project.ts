@@ -60,6 +60,7 @@ export const useProjectStore = defineStore('project', () => {
       lastSelectedSnippetId: null,
       snippetTabs: {},
       customCss: '',
+      customJs: '',
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }
@@ -138,14 +139,20 @@ export const useProjectStore = defineStore('project', () => {
 
   const duplicateSnippetInstance = (instanceId: string): SnippetInstance | null => {
     if (!currentProject.value) return null
-    const source = currentProject.value.snippetInstances.find((s) => s.id === instanceId)
-    if (!source) return null
+    const sourceIndex = currentProject.value.snippetInstances.findIndex((s) => s.id === instanceId)
+    if (sourceIndex === -1) return null
+    const source = currentProject.value.snippetInstances[sourceIndex]
     const copy: SnippetInstance = {
       ...JSON.parse(JSON.stringify(source)),
       id: crypto.randomUUID(),
-      sortOrder: currentProject.value.snippetInstances.length,
+      sortOrder: source.sortOrder + 0.5, // 放在原项后面
     }
-    currentProject.value.snippetInstances.push(copy)
+    // 在源项后面插入
+    currentProject.value.snippetInstances.splice(sourceIndex + 1, 0, copy)
+    // 重新排序 sortOrder
+    currentProject.value.snippetInstances.forEach((inst, idx) => {
+      inst.sortOrder = idx
+    })
     updateCurrentProject({ snippetInstances: currentProject.value.snippetInstances })
     return copy
   }
@@ -170,6 +177,10 @@ export const useProjectStore = defineStore('project', () => {
 
   const setCustomCss = (css: string) => {
     updateCurrentProject({ customCss: css })
+  }
+
+  const setCustomJs = (js: string) => {
+    updateCurrentProject({ customJs: js })
   }
 
   const completeProject = () => {
@@ -233,6 +244,7 @@ export const useProjectStore = defineStore('project', () => {
     setSnippetTab,
     setStep,
     setCustomCss,
+    setCustomJs,
     completeProject,
     deleteProject,
     duplicateProject,

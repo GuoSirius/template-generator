@@ -45,6 +45,7 @@ export interface Project {
   lastSelectedSnippetId: string | null
   snippetTabs: Record<string, 'props' | 'data'>
   customCss: string
+  customJs: string
   createdAt: number
   updatedAt: number
 }

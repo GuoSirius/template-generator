@@ -3,6 +3,18 @@
     <div class="list-header">
       <h2 class="page-title">我的模板</h2>
       <div class="header-actions">
+        <button
+          class="batch-delete-btn"
+          :disabled="selectedProjects.length === 0"
+          @click="confirmBatchDelete"
+        >
+          <Trash2 :size="16" />
+          <span>删除选中 ({{ selectedProjects.length }})</span>
+        </button>
+        <button class="create-btn" @click="onCreate">
+          <PlusCircle :size="18" />
+          <span>创建模板</span>
+        </button>
         <div class="view-switcher">
           <button class="view-btn" :class="{ active: viewMode === 'card' }" @click="viewMode = 'card'" title="卡片模式">
             <LayoutGrid :size="18" />
@@ -11,10 +23,6 @@
             <List :size="18" />
           </button>
         </div>
-        <button class="create-btn" @click="onCreate">
-          <PlusCircle :size="18" />
-          <span>创建模板</span>
-        </button>
       </div>
     </div>
 
@@ -33,7 +41,13 @@
 
     <!-- 卡片模式 -->
     <div v-if="viewMode === 'card' && sortedProjects.length > 0" class="card-grid">
-      <div v-for="project in sortedProjects" :key="project.id" class="project-card">
+      <div v-for="project in sortedProjects" :key="project.id" class="project-card" :class="{ selected: selectedProjects.includes(project.id) }">
+        <div class="card-checkbox">
+          <el-checkbox
+            :model-value="selectedProjects.includes(project.id)"
+            @change="toggleSelect(project.id)"
+          />
+        </div>
         <div class="card-preview">
           <div class="card-preview-placeholder">
             <FileText :size="32" />
@@ -70,7 +84,16 @@
 
     <!-- 表格模式 -->
     <div v-if="viewMode === 'table' && sortedProjects.length > 0" class="table-wrapper">
-      <el-table :data="sortedProjects" style="width: 100%" :header-cell-style="tableHeaderStyle" row-class-name="table-row">
+      <el-table
+        ref="tableRef"
+        :data="sortedProjects"
+        style="width: 100%"
+        :header-cell-style="tableHeaderStyle"
+        row-class-name="table-row"
+        row-key="id"
+        @selection-change="handleSelectionChange"
+      >
+        <el-table-column type="selection" width="50" />
         <el-table-column prop="name" label="名称" min-width="200">
           <template #default="{ row }">
             <div class="table-name-cell">
@@ -120,12 +143,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   LayoutGrid, List, PlusCircle, FileCode2, FileText,
   Eye, Edit3, Play, Copy, Trash2,
 } from 'lucide-vue-next'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/project'
 import { useTemplateStore } from '@/stores/template'
 import { useSnippetStore } from '@/stores/snippet'
@@ -143,6 +167,78 @@ const loading = ref(false)
 const viewMode = ref<'card' | 'table'>('card')
 const showPreview = ref(false)
 const previewHtml = ref('')
+const selectedProjects = ref<string[]>([])
+const tableRef = ref<InstanceType<typeof import('element-plus').ElTable> | null>(null)
+
+// 监听视图切换，同步选中状态到表格
+watch(() => viewMode.value, (newMode) => {
+  if (newMode === 'table' && selectedProjects.value.length > 0) {
+    // 使用 requestAnimationFrame 确保 DOM 渲染完成
+    requestAnimationFrame(() => {
+      if (!tableRef.value) return
+      const rows = sortedProjects.value.filter(p => selectedProjects.value.includes(p.id))
+      rows.forEach(row => {
+        tableRef.value?.toggleRowSelection(row, true)
+      })
+    })
+  }
+})
+
+const toggleSelect = (id: string) => {
+  const idx = selectedProjects.value.indexOf(id)
+  if (idx === -1) {
+    selectedProjects.value.push(id)
+  } else {
+    selectedProjects.value.splice(idx, 1)
+  }
+}
+
+// 记录切换到表格模式时的选中状态，用于检测取消选中
+let tableModePreviousSelected: string[] = []
+
+const handleSelectionChange = (rows: Project[]) => {
+  const currentIds = rows.map(r => r.id)
+
+  // 如果之前有记录表格模式的选中状态，说明是从卡片切换过来的
+  if (tableModePreviousSelected.length > 0) {
+    // 找出被取消选中的项目（之前在选中列表中，现在不在 currentIds 中）
+    const deselected = tableModePreviousSelected.filter(
+      id => !currentIds.includes(id) && selectedProjects.value.includes(id)
+    )
+    // 移除被取消选中的
+    deselected.forEach(id => {
+      const idx = selectedProjects.value.indexOf(id)
+      if (idx > -1) selectedProjects.value.splice(idx, 1)
+    })
+  }
+
+  // 合并新增选中的项目
+  currentIds.forEach(id => {
+    if (!selectedProjects.value.includes(id)) {
+      selectedProjects.value.push(id)
+    }
+  })
+
+  // 更新记录
+  tableModePreviousSelected = currentIds
+}
+
+const confirmBatchDelete = () => {
+  if (selectedProjects.value.length === 0) return
+  ElMessageBox.confirm(
+    `确定要删除选中的 ${selectedProjects.value.length} 个模板吗？此操作不可恢复。`,
+    '批量删除确认',
+    {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    selectedProjects.value.forEach(id => projectStore.deleteProject(id))
+    selectedProjects.value = []
+    ElMessage.success('批量删除成功')
+  }).catch(() => {})
+}
 
 const sortedProjects = computed(() => projectStore.sortedProjects)
 
@@ -172,9 +268,22 @@ const resumeProject = (project: Project) => {
 }
 
 const copyProject = async (project: Project) => {
-  const copy = await projectStore.duplicateProject(project.id)
-  if (copy) {
-    router.push(`/create/${copy.id}?mode=resume`)
+  try {
+    await ElMessageBox.confirm(
+      `确定要复制「${project.name}」吗？`,
+      '确认复制',
+      {
+        confirmButtonText: '复制',
+        cancelButtonText: '取消',
+        type: 'info',
+      }
+    )
+    const copy = await projectStore.duplicateProject(project.id)
+    if (copy) {
+      router.push(`/create/${copy.id}`)
+    }
+  } catch {
+    // 用户取消，不做任何操作
   }
 }
 
@@ -247,6 +356,39 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.batch-delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.batch-delete-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.batch-delete-btn:disabled:hover {
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.batch-delete-btn:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .view-switcher {
@@ -344,6 +486,52 @@ onMounted(async () => {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
+  position: relative;
+}
+
+.project-card.selected {
+  border-color: var(--primary);
+  background: rgba(56, 189, 248, 0.08);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+}
+
+.card-checkbox {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+}
+
+.card-checkbox :deep(.el-checkbox) {
+  --el-checkbox-checked-bg-color: var(--primary);
+  --el-checkbox-checked-input-border-color: var(--primary);
+}
+
+.card-checkbox :deep(.el-checkbox__inner) {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
+}
+
+.card-checkbox :deep(.el-checkbox__inner::after) {
+  width: 6px;
+  height: 10px;
+  left: 9px;
+  top: 8px;
+}
+
+/* 表格模式复选框样式 */
+.table-wrapper :deep(.el-checkbox__inner) {
+  width: 18px;
+  height: 18px;
+}
+
+.table-wrapper :deep(.el-checkbox__inner::after) {
+  width: 5px;
+  height: 9px;
+  left: 8px;
+  top: 6px;
 }
 
 .project-card:hover {

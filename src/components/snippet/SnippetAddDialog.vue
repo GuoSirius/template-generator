@@ -4,18 +4,36 @@
       :model-value="visible"
       @update:model-value="$emit('update:modelValue', $event)"
       title="添加片段"
-      width="720px"
+      width="800px"
       :close-on-click-modal="false"
       destroy-on-close
     >
+      <div class="selection-summary" v-if="selectedFolders.length > 0">
+        <span>已选择 {{ selectedFolders.length }} 个片段：</span>
+        <div class="selected-tags">
+          <el-tag
+            v-for="(folder, index) in selectedFolders"
+            :key="folder"
+            closable
+            @close="removeSelection(folder)"
+            class="selection-tag"
+          >
+            {{ index + 1 }}. {{ getSnippetName(folder) }}
+          </el-tag>
+        </div>
+      </div>
+
       <div class="snippet-grid">
         <div
-          v-for="snippet in availableSnippets"
+          v-for="(snippet, index) in availableSnippets"
           :key="snippet.folder"
           class="snippet-card"
-          :class="{ selected: selectedFolder === snippet.folder }"
-          @click="selectedFolder = snippet.folder"
+          :class="{ selected: selectedFolders.includes(snippet.folder) }"
+          @click="toggleSelection(snippet.folder)"
         >
+          <div class="card-order" v-if="selectedFolders.includes(snippet.folder)">
+            {{ selectedFolders.indexOf(snippet.folder) + 1 }}
+          </div>
           <div class="card-body">
             <h4 class="card-name">{{ snippet.name }}</h4>
             <span class="card-version">v{{ snippet.version }}</span>
@@ -27,26 +45,28 @@
             </div>
           </div>
           <div class="card-preview">
-            <div v-if="selectedFolder === snippet.folder && previewHtml" class="preview-area">
+            <div v-if="previewFolder === snippet.folder && previewHtml" class="preview-area">
               <iframe :srcdoc="previewHtml" class="preview-iframe" sandbox="allow-same-origin" />
             </div>
-            <div v-else class="preview-placeholder">
+            <div v-else class="preview-placeholder" @mouseenter="loadPreview(snippet.folder)">
               <Eye :size="24" />
-              <span>点击查看预览</span>
+              <span>点击选择</span>
             </div>
           </div>
         </div>
       </div>
       <template #footer>
-        <el-button @click="visible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :disabled="!selectedFolder"
-          class="confirm-btn"
-          @click="onConfirm"
-        >
-          添加片段
-        </el-button>
+        <div class="dialog-footer">
+          <el-button @click="visible = false">取消</el-button>
+          <el-button
+            type="primary"
+            :disabled="selectedFolders.length === 0"
+            class="confirm-btn"
+            @click="onConfirm"
+          >
+            添加 {{ selectedFolders.length }} 个片段
+          </el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -68,7 +88,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  add: [folder: string]
+  add: [folders: string[]]
 }>()
 
 const visible = computed({
@@ -77,18 +97,39 @@ const visible = computed({
 })
 
 const snippetStore = useSnippetStore()
-const selectedFolder = ref<string>('')
+const selectedFolders = ref<string[]>([])
+const previewFolder = ref<string>('')
 const previewHtml = ref('')
 
 const availableSnippets = computed(() => {
-  return props.snippets.filter(s => !props.existingIds.includes(s.folder))
+  return props.snippets
 })
 
-watch(selectedFolder, async (folder) => {
-  if (!folder) {
-    previewHtml.value = ''
-    return
+function getSnippetName(folder: string): string {
+  const snippet = props.snippets.find(s => s.folder === folder)
+  return snippet?.name || folder
+}
+
+function toggleSelection(folder: string) {
+  const index = selectedFolders.value.indexOf(folder)
+  if (index === -1) {
+    selectedFolders.value.push(folder)
+  } else {
+    selectedFolders.value.splice(index, 1)
   }
+}
+
+function removeSelection(folder: string) {
+  const index = selectedFolders.value.indexOf(folder)
+  if (index !== -1) {
+    selectedFolders.value.splice(index, 1)
+  }
+}
+
+async function loadPreview(folder: string) {
+  if (previewFolder.value === folder) return
+
+  previewFolder.value = folder
   const config = await snippetStore.loadSnippetDetail(folder)
   const html = snippetStore.getSnippetHtml(folder)
   if (config && html) {
@@ -105,22 +146,55 @@ watch(selectedFolder, async (folder) => {
     }
     previewHtml.value = buildSnippetPreviewHtml(compiled)
   }
-})
+}
 
 function onConfirm() {
-  if (selectedFolder.value) {
-    emit('add', selectedFolder.value)
-    selectedFolder.value = ''
+  if (selectedFolders.value.length > 0) {
+    emit('add', [...selectedFolders.value])
+    selectedFolders.value = []
+    previewFolder.value = ''
     previewHtml.value = ''
     visible.value = false
   }
 }
+
+// 重置选择状态
+watch(visible, (val) => {
+  if (!val) {
+    selectedFolders.value = []
+    previewFolder.value = ''
+    previewHtml.value = ''
+  }
+})
 </script>
 
 <style scoped>
+.selection-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selection-tag {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(2, 132, 199, 0.15));
+  border-color: var(--primary);
+}
+
 .snippet-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 14px;
   max-height: 55vh;
   overflow-y: auto;
@@ -128,6 +202,7 @@ function onConfirm() {
 }
 
 .snippet-card {
+  position: relative;
   border: 2px solid var(--border-color);
   border-radius: 12px;
   overflow: hidden;
@@ -142,6 +217,23 @@ function onConfirm() {
 .snippet-card.selected {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+}
+
+.card-order {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #38BDF8, #0284C7);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 1;
 }
 
 .card-body {
@@ -176,7 +268,7 @@ function onConfirm() {
 }
 
 .card-preview {
-  height: 180px;
+  height: 160px;
   background: var(--bg-primary);
   border-top: 1px solid var(--border-color);
 }
@@ -202,6 +294,12 @@ function onConfirm() {
   gap: 6px;
   font-size: 13px;
   opacity: 0.6;
+  cursor: pointer;
+}
+
+.preview-placeholder:hover {
+  opacity: 1;
+  background: rgba(56, 189, 248, 0.05);
 }
 
 .confirm-btn {
@@ -211,5 +309,11 @@ function onConfirm() {
 
 .confirm-btn:hover {
   background: linear-gradient(135deg, #0EA5E9, #0369A1);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>

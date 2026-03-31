@@ -11,6 +11,7 @@ formSchema:
       default: ""
       placeholder: "请输入特性标题"
       required: true
+      trim: true
     - key: "description"
       label: "特性描述"
       type: "textarea"

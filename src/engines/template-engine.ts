@@ -50,13 +50,43 @@ export function replacePlaceholders(
   templateHtml: string,
   renderedSnippets: { placeholder: string; html: string }[],
 ): string {
-  let result = templateHtml
+  // 按占位符分组，支持同一个占位符多个片段
+  const groupedByPlaceholder = new Map<string, string[]>()
   for (const { placeholder, html } of renderedSnippets) {
     const key = placeholder.replace('placeholder:', '')
-    const regex = new RegExp(`<!--\\s*placeholder:${key}\\s*-->`, 'g')
-    result = result.replace(regex, html)
+    if (!groupedByPlaceholder.has(key)) {
+      groupedByPlaceholder.set(key, [])
+    }
+    groupedByPlaceholder.get(key)!.push(html)
   }
-  // Replace remaining placeholders with defaults
+
+  let result = templateHtml
+
+  // 遍历每个占位符的所有片段
+  for (const [key, htmlList] of groupedByPlaceholder) {
+    // 找到模板中所有匹配的占位符位置
+    const regex = new RegExp(`<!--\\s*placeholder:${key}\\s*-->`, 'g')
+    const matches = [...result.matchAll(regex)]
+
+    if (matches.length > 0) {
+      // 将该占位符的所有片段依次替换对应的占位符
+      let newResult = result
+      let offset = 0
+
+      for (let i = 0; i < Math.min(htmlList.length, matches.length); i++) {
+        const match = matches[i]
+        const insertPos = match.index! + offset
+        // 替换占位符注释为片段HTML
+        newResult = newResult.slice(0, insertPos) + htmlList[i] + newResult.slice(insertPos + match[0].length)
+        // 计算偏移量（因为替换后字符串长度会变化）
+        offset += htmlList[i].length - match[0].length
+      }
+
+      result = newResult
+    }
+  }
+
+  // 移除剩余未替换的占位符注释
   result = result.replace(PLACEHOLDER_REGEX, '')
   return result
 }

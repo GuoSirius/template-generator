@@ -1,30 +1,30 @@
 <template>
-  <div class="custom-css-dialog">
+  <div class="custom-js-dialog">
     <el-dialog
       :model-value="dialogVisible"
       @update:model-value="handleDialogClose"
-      title="定制 CSS"
+      title="定制 JavaScript"
       width="800px"
       :close-on-click-modal="false"
       top="5vh"
       destroy-on-close
     >
-      <div class="css-layout">
-        <div class="css-editor-section">
+      <div class="js-layout">
+        <div class="js-editor-section">
           <div class="section-header">
-            <span class="section-title">CSS 编辑器</span>
-            <div class="validation-info" :class="cssValidation.valid ? 'valid' : 'invalid'">
-              <CheckCircle2 v-if="cssValidation.valid" :size="14" />
+            <span class="section-title">JavaScript 编辑器</span>
+            <div class="validation-info" :class="jsValidation.valid ? 'valid' : 'invalid'">
+              <CheckCircle2 v-if="jsValidation.valid" :size="14" />
               <AlertCircle v-else :size="14" />
-              <span>{{ cssValidation.valid ? '语法正确' : cssValidation.errors[0] }}</span>
+              <span>{{ jsValidation.valid ? '语法正确' : jsValidation.errors[0] }}</span>
             </div>
           </div>
           <div class="editor-wrapper">
             <textarea
               ref="editorRef"
-              v-model="cssCode"
-              class="css-textarea"
-              placeholder="输入自定义 CSS 样式..."
+              v-model="jsCode"
+              class="js-textarea"
+              placeholder="输入自定义 JavaScript 代码..."
               spellcheck="false"
               @input="onInput"
               @keydown="handleKeyDown"
@@ -50,7 +50,7 @@
     <PreviewDialog
       v-model="showPreview"
       :srcdoc="previewSrcdoc"
-      title="CSS 预览效果"
+      title="JavaScript 预览效果"
       :height="isFullscreen ? 'calc(100vh - 120px)' : '70vh'"
     />
   </div>
@@ -60,10 +60,9 @@
 import { ref, computed, watch } from 'vue'
 import { CheckCircle2, AlertCircle, Eye, Maximize2, Minimize2 } from 'lucide-vue-next'
 import { ElMessageBox } from 'element-plus'
-import { validateCss } from '@/engines/css-engine'
-import { compileTemplate, resolveSnippetData, wrapWithContainer, buildSpacingStyle, replacePlaceholders } from '@/engines/template-engine'
 import { buildPreviewHtml } from '@/engines/preview-renderer'
-import type { SnippetInstance, Spacing } from '@/types'
+import { compileTemplate, resolveSnippetData, wrapWithContainer, buildSpacingStyle, replacePlaceholders } from '@/engines/template-engine'
+import type { SnippetInstance } from '@/types'
 import { useSnippetStore } from '@/stores/snippet'
 import PreviewDialog from '@/components/preview/PreviewDialog.vue'
 
@@ -72,6 +71,7 @@ const props = defineProps<{
   modelValue: string
   templateHtml: string
   snippetInstances: SnippetInstance[]
+  customCss?: string
   seoTitle?: string
 }>()
 
@@ -88,14 +88,26 @@ const dialogVisible = computed({
   set: (val: boolean) => emit('update:visible', val)
 })
 
-const cssCode = ref('')
+const jsCode = ref('')
 const originalCode = ref('')
 const showPreview = ref(false)
 const editorRef = ref<HTMLTextAreaElement>()
 
-const cssValidation = computed(() => validateCss(String(cssCode.value)))
+// JavaScript 语法验证
+const jsValidation = computed(() => {
+  const code = String(jsCode.value).trim()
+  if (!code) {
+    return { valid: true, errors: [] }
+  }
+  try {
+    new Function(code)
+    return { valid: true, errors: [] }
+  } catch (e: any) {
+    return { valid: false, errors: [e.message] }
+  }
+})
 
-// 计算预览 HTML：模板 + 片段 + CSS
+// 预览 HTML - 渲染模板 + 片段 + CSS + JS
 const previewSrcdoc = computed(() => {
   if (!props.templateHtml) return ''
 
@@ -116,7 +128,7 @@ const previewSrcdoc = computed(() => {
         compiled = compileTemplate(html, { ...(data as Record<string, any>) })
       }
     } catch (e) {
-      console.error('CSS Preview compile error:', e)
+      console.error('JS Preview compile error:', e)
       return null
     }
     const spacingStyle = buildSpacingStyle(inst.properties.spacing)
@@ -127,22 +139,20 @@ const previewSrcdoc = computed(() => {
   // 替换占位符
   let finalHtml = replacePlaceholders(props.templateHtml, renderedSnippets)
 
-  // 添加 CSS 并构建预览
-  const cssStr = String(cssCode.value)
-  return buildPreviewHtml(finalHtml, cssStr, props.seoTitle)
+  // 构建预览：CSS + JS
+  return buildPreviewHtml(finalHtml, props.customCss || '', props.seoTitle, '', '', props.modelValue)
 })
 
 watch(() => props.modelValue, (val) => {
-  cssCode.value = val
+  jsCode.value = val
   originalCode.value = val
 }, { immediate: true })
 
 function onInput() {
-  emit('update:modelValue', cssCode.value)
+  emit('update:modelValue', jsCode.value)
 }
 
 function handleKeyDown(e: KeyboardEvent) {
-  // Tab 键插入两个空格
   if (e.key === 'Tab') {
     e.preventDefault()
     const start = editorRef.value?.selectionStart || 0
@@ -153,14 +163,14 @@ function handleKeyDown(e: KeyboardEvent) {
       const after = target.value.substring(end)
       target.value = before + '  ' + after
       target.selectionStart = target.selectionEnd = start + 2
-      cssCode.value = target.value
-      emit('update:modelValue', cssCode.value)
+      jsCode.value = target.value
+      emit('update:modelValue', jsCode.value)
     }
   }
 }
 
 function hasChanges(): boolean {
-  return cssCode.value !== originalCode.value
+  return jsCode.value !== originalCode.value
 }
 
 async function handleCancel() {
@@ -195,20 +205,20 @@ function handlePreview() {
 }
 
 function onSave() {
-  emit('save', cssCode.value)
-  originalCode.value = cssCode.value
+  emit('save', jsCode.value)
+  originalCode.value = jsCode.value
   dialogVisible.value = false
 }
 </script>
 
 <style scoped>
-.css-layout {
+.js-layout {
   display: flex;
   flex-direction: column;
   height: 55vh;
 }
 
-.css-editor-section {
+.js-editor-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -250,7 +260,7 @@ function onSave() {
   display: flex;
 }
 
-.css-textarea {
+.js-textarea {
   width: 100%;
   height: 100%;
   background: #1e1e1e;
@@ -265,7 +275,7 @@ function onSave() {
   tab-size: 2;
 }
 
-.css-textarea::placeholder {
+.js-textarea::placeholder {
   color: #6a6a6a;
 }
 

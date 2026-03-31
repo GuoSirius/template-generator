@@ -5,10 +5,12 @@
       placeholder="选择页面模板"
       size="large"
       style="width: 100%;"
+      filterable
+      :filter-method="handleFilter"
       @update:model-value="emit('update:modelValue', $event)"
     >
       <el-option
-        v-for="tpl in templates"
+        v-for="tpl in filteredTemplates"
         :key="tpl.folder"
         :label="tpl.name"
         :value="tpl.folder"
@@ -23,9 +25,10 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import type { TemplateMeta } from '@/types'
 
-defineProps<{
+const props = defineProps<{
   templates: TemplateMeta[]
   modelValue: string
 }>()
@@ -33,6 +36,18 @@ defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
+
+const filterText = ref('')
+
+const handleFilter = (value: string) => {
+  filterText.value = value
+}
+
+const filteredTemplates = computed(() => {
+  if (!filterText.value) return props.templates
+  const keyword = filterText.value.toLowerCase()
+  return props.templates.filter(t => t.name.toLowerCase().includes(keyword))
+})
 </script>
 
 <style scoped>

@@ -15,11 +15,32 @@ export interface FieldDef {
   options?: string[]
   placeholder?: string
   required?: boolean
+  // 去除空格: true-去除前后, 'start'-去除首部, 'end'-去除尾部
+  trim?: boolean | 'start' | 'end'
 }
 
-export interface FormSchema {
-  type: 'object' | 'array'
+export interface ObjectFieldGroup {
+  type: 'object'
+  name: string
+  label: string
   fields: FieldDef[]
+}
+
+export interface ArrayFieldGroup {
+  type: 'array'
+  name: string
+  label: string
+  itemLabel?: string
+  fields: FieldDef[]
+}
+
+export type FieldGroup = ObjectFieldGroup | ArrayFieldGroup
+
+export interface FormSchema {
+  type: 'object' | 'array' | 'objectWithList'
+  groups?: FieldGroup[]
+  // 兼容旧格式
+  fields?: FieldDef[]
 }
 
 export interface SnippetConfig {

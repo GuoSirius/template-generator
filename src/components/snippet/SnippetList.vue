@@ -2,7 +2,6 @@
   <div class="snippet-list">
     <div v-if="instances.length === 0" class="list-empty">
       <p class="empty-text">暂无片段</p>
-      <p class="empty-hint">点击下方按钮添加片段</p>
     </div>
     <draggable
       v-else
@@ -35,27 +34,34 @@
               @click.stop
               @update:model-value="toggleEnabled(element.id, $event)"
             />
-            <button class="icon-btn btn-copy" title="复制" @click.stop="emit('copy', element.id)">
-              <Copy :size="14" />
-            </button>
-            <button class="icon-btn btn-delete" title="删除" @click.stop="emit('delete', element.id)">
-              <Trash2 :size="14" />
-            </button>
+            <el-dropdown trigger="hover" @command="(cmd: string) => handleCommand(cmd, element.id)">
+              <button class="more-btn" @click.stop>
+                <MoreHorizontal :size="16" />
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="copy">
+                    <Copy :size="14" />
+                    <span>复制</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="delete" divided>
+                    <Trash2 :size="14" />
+                    <span>删除</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </div>
       </template>
     </draggable>
-    <button class="add-btn" @click="emit('add')">
-      <Plus :size="18" />
-      <span>添加片段</span>
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import draggable from 'vuedraggable'
-import { GripVertical, Copy, Trash2, Plus } from 'lucide-vue-next'
+import { GripVertical, MoreHorizontal, Copy, Trash2 } from 'lucide-vue-next'
 import type { SnippetInstance, SnippetMeta } from '@/types'
 
 const props = defineProps<{
@@ -89,6 +95,14 @@ function toggleEnabled(id: string, enabled: boolean) {
   emit('toggle', id, enabled)
 }
 
+function handleCommand(cmd: string, id: string) {
+  if (cmd === 'copy') {
+    emit('copy', id)
+  } else if (cmd === 'delete') {
+    emit('delete', id)
+  }
+}
+
 function onDragEnd() {
   emit('reorder', [...localInstances.value])
 }
@@ -98,7 +112,7 @@ function onDragEnd() {
 .snippet-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   height: 100%;
 }
 
@@ -134,6 +148,11 @@ function onDragEnd() {
   cursor: pointer;
   transition: all 0.2s;
   gap: 8px;
+  margin-bottom: 12px;
+}
+
+.snippet-item:last-child {
+  margin-bottom: 0;
 }
 
 .snippet-item:hover {
@@ -200,51 +219,26 @@ function onDragEnd() {
 .item-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.icon-btn {
+.more-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
+  background: transparent;
   cursor: pointer;
+  color: var(--text-muted);
   transition: all 0.2s;
-  color: white;
 }
 
-.icon-btn:hover {
-  transform: scale(1.1);
-  brightness: 1.2;
-}
-
-.btn-copy { background: #8B5CF6; }
-.btn-delete { background: #EF4444; }
-
-.add-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px;
-  margin-top: 8px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #38BDF8, #0284C7);
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.add-btn:hover {
-  brightness: 1.15;
-  transform: scale(1.02);
+.more-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 </style>

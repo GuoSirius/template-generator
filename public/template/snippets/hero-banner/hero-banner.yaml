@@ -12,6 +12,7 @@ formSchema:
       default: "Welcome"
       placeholder: "请输入主标题"
       required: true
+      trim: true
     - key: "subtitle"
       label: "副标题"
       type: "textarea"
@@ -32,6 +33,7 @@ formSchema:
       type: "text"
       default: "Get Started"
       placeholder: "留空则不显示按钮"
+      trim: "end"
 sampleData:
   title: "Transform Your Ideas"
   subtitle: "Into reality with our powerful tools and intuitive design platform"

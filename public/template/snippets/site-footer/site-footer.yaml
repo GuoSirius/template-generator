@@ -10,5 +10,6 @@ formSchema:
       type: "text"
       default: "© 2026 Template Generator. All rights reserved."
       placeholder: "请输入版权信息"
+      trim: "end"
 sampleData:
   copyright: "© 2026 Template Generator. All rights reserved."
