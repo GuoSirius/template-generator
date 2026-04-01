@@ -3,9 +3,14 @@ import template from 'lodash-es/template'
 export function compileTemplate(htmlTemplate: string, data: Record<string, any>): string {
   try {
     const compiled = template(htmlTemplate)
-    return compiled(data)
+    try {
+      return compiled(data)
+    } catch (e) {
+      console.warn('Template render error, using raw HTML:', e)
+      return htmlTemplate
+    }
   } catch (e) {
-    console.error('Template compilation error:', e)
+    console.warn('Template compile error, using raw HTML:', e)
     return htmlTemplate
   }
 }

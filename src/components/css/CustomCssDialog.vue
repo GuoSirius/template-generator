@@ -49,7 +49,7 @@
     <!-- 预览对话框 -->
     <PreviewDialog
       v-model="showPreview"
-      :srcdoc="previewSrcdoc"
+      :srcdoc="previewSrcdocValue"
       title="CSS 预览效果"
       :height="isFullscreen ? 'calc(100vh - 120px)' : '70vh'"
     />
@@ -61,10 +61,8 @@ import { ref, computed, watch } from 'vue'
 import { CheckCircle2, AlertCircle, Eye, Maximize2, Minimize2 } from 'lucide-vue-next'
 import { ElMessageBox } from 'element-plus'
 import { validateCss } from '@/engines/css-engine'
-import { compileTemplate, resolveSnippetData, wrapWithContainer, buildSpacingStyle, replacePlaceholders } from '@/engines/template-engine'
-import { buildPreviewHtml } from '@/engines/preview-renderer'
-import type { SnippetInstance, Spacing } from '@/types'
-import { useSnippetStore } from '@/stores/snippet'
+import { usePreview } from '@/composables/use-preview'
+import type { SnippetInstance } from '@/types'
 import PreviewDialog from '@/components/preview/PreviewDialog.vue'
 
 const props = defineProps<{
@@ -81,7 +79,7 @@ const emit = defineEmits<{
   save: [value: string]
 }>()
 
-const snippetStore = useSnippetStore()
+const { previewSrcdoc } = usePreview()
 
 const dialogVisible = computed({
   get: () => props.visible ?? false,
@@ -95,41 +93,11 @@ const editorRef = ref<HTMLTextAreaElement>()
 
 const cssValidation = computed(() => validateCss(String(cssCode.value)))
 
-// 计算预览 HTML：模板 + 片段 + CSS
-const previewSrcdoc = computed(() => {
-  if (!props.templateHtml) return ''
-
-  const instances = props.snippetInstances || []
-  // 渲染启用的片段
-  const enabledInstances = instances.filter(s => s.enabled)
-  const renderedSnippets = enabledInstances.map(inst => {
-    const config = snippetStore.configs.get(inst.snippetId)
-    const html = snippetStore.getSnippetHtml(inst.snippetId)
-    if (!html) return null
-    const data = resolveSnippetData(inst.data as Record<string, any>, config?.sampleData || {})
-
-    let compiled = html
-    try {
-      if (config?.formSchema.type === 'array') {
-        compiled = compileTemplate(html, { features: Array.isArray(data) ? data : [data] })
-      } else {
-        compiled = compileTemplate(html, { ...(data as Record<string, any>) })
-      }
-    } catch (e) {
-      console.error('CSS Preview compile error:', e)
-      return null
-    }
-    const spacingStyle = buildSpacingStyle(inst.properties.spacing)
-    const wrapped = wrapWithContainer(compiled, inst.properties.className, spacingStyle)
-    return { placeholder: inst.properties.placeholder, html: wrapped }
-  }).filter(Boolean) as { placeholder: string; html: string }[]
-
-  // 替换占位符
-  let finalHtml = replacePlaceholders(props.templateHtml, renderedSnippets)
-
-  // 添加 CSS 并构建预览
-  const cssStr = String(cssCode.value)
-  return buildPreviewHtml(finalHtml, cssStr, props.seoTitle)
+// 计算预览 HTML：使用 usePreview 统一管道，传入编辑中的 CSS
+const previewSrcdocValue = previewSrcdoc({
+  css: String(cssCode.value),
+  templateHtml: props.templateHtml,
+  seoTitle: props.seoTitle,
 })
 
 watch(() => props.modelValue, (val) => {

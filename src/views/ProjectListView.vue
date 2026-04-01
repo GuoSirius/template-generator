@@ -151,17 +151,13 @@ import {
 } from 'lucide-vue-next'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/project'
-import { useTemplateStore } from '@/stores/template'
-import { useSnippetStore } from '@/stores/snippet'
 import PreviewIframe from '@/components/preview/PreviewIframe.vue'
-import { compileTemplate, resolveSnippetData, wrapWithContainer, buildSpacingStyle, replacePlaceholders } from '@/engines/template-engine'
-import { buildPreviewHtml } from '@/engines/preview-renderer'
+import { usePreview } from '@/composables/use-preview'
 import type { Project } from '@/types'
 
 const router = useRouter()
 const projectStore = useProjectStore()
-const templateStore = useTemplateStore()
-const snippetStore = useSnippetStore()
+const { generatePreviewHtml } = usePreview()
 
 const loading = ref(false)
 const viewMode = ref<'card' | 'table'>('card')
@@ -300,25 +296,7 @@ const confirmDelete = (project: Project) => {
 
 const previewProject = async (project: Project) => {
   try {
-    const [templateHtml, snippets] = await Promise.all([
-      (await import('@/engines/yaml-parser')).getTemplateHtml(project.templateId),
-      Promise.all(project.snippetInstances.map(async (inst) => {
-        if (!inst.enabled) return null
-        const config = await snippetStore.loadSnippetDetail(inst.snippetId)
-        const html = snippetStore.getSnippetHtml(inst.snippetId)
-        const data = resolveSnippetData(
-          (inst.data && Object.keys(inst.data as object).length > 0) ? inst.data as Record<string, any> : {},
-          config?.sampleData || {},
-        )
-        const compiledHtml = compileTemplate(html, { ...data, features: Array.isArray(data) ? data : [data] })
-        const spacingStyle = buildSpacingStyle(inst.properties.spacing)
-        const wrapped = wrapWithContainer(compiledHtml, inst.properties.className, spacingStyle)
-        return { placeholder: inst.properties.placeholder, html: wrapped }
-      })),
-    ])
-    const validSnippets = snippets.filter(Boolean) as { placeholder: string; html: string }[]
-    let finalHtml = replacePlaceholders(templateHtml, validSnippets)
-    previewHtml.value = buildPreviewHtml(finalHtml, project.customCss, project.seo.title)
+    previewHtml.value = await generatePreviewHtml(project)
     showPreview.value = true
   } catch (e) {
     console.error('Preview failed:', e)

@@ -25,7 +25,7 @@
 
       <div class="snippet-grid">
         <div
-          v-for="(snippet, index) in availableSnippets"
+          v-for="snippet in availableSnippets"
           :key="snippet.folder"
           class="snippet-card"
           :class="{ selected: selectedFolders.includes(snippet.folder) }"
@@ -46,18 +46,38 @@
           </div>
           <div class="card-preview">
             <div v-if="previewFolder === snippet.folder && previewHtml" class="preview-area">
-              <iframe :srcdoc="previewHtml" class="preview-iframe" sandbox="allow-same-origin" />
+              <iframe :srcdoc="previewHtml" class="preview-iframe" sandbox="allow-modals allow-scripts allow-same-origin" />
             </div>
             <div v-else class="preview-placeholder" @mouseenter="loadPreview(snippet.folder)">
               <Eye :size="24" />
               <span>点击选择</span>
             </div>
+            <button
+              v-if="templateFolder"
+              class="card-preview-btn"
+              title="在模板中预览此片段"
+              @click.stop="openTemplatePreview(snippet.folder)"
+            >
+              <Eye :size="14" />
+              <span>模板预览</span>
+            </button>
           </div>
         </div>
       </div>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="visible = false">取消</el-button>
+          <el-button
+            v-if="templateFolder"
+            type="success"
+            :disabled="selectedFolders.length === 0"
+            class="preview-all-btn"
+            :loading="previewAllLoading"
+            @click="openSelectedPreview"
+          >
+            <Eye :size="16" />
+            预览效果
+          </el-button>
           <el-button
             type="primary"
             :disabled="selectedFolders.length === 0"
@@ -69,6 +89,14 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 模板预览对话框 -->
+    <PreviewDialog
+      v-model="showTemplatePreview"
+      :srcdoc="templatePreviewSrcdoc"
+      title="模板预览"
+      height="75vh"
+    />
   </div>
 </template>
 
@@ -77,13 +105,16 @@ import { ref, computed, watch } from 'vue'
 import { Eye } from 'lucide-vue-next'
 import type { SnippetMeta } from '@/types'
 import { useSnippetStore } from '@/stores/snippet'
-import { compileTemplate, resolveSnippetData } from '@/engines/template-engine'
+import { compileSnippetByType } from '@/composables/use-preview'
 import { buildSnippetPreviewHtml } from '@/engines/preview-renderer'
+import { usePreview } from '@/composables/use-preview'
+import PreviewDialog from '@/components/preview/PreviewDialog.vue'
 
 const props = defineProps<{
   modelValue?: boolean
   snippets: SnippetMeta[]
   existingIds: string[]
+  templateFolder?: string
 }>()
 
 const emit = defineEmits<{
@@ -97,9 +128,13 @@ const visible = computed({
 })
 
 const snippetStore = useSnippetStore()
+const { generateSnippetPreviewHtml } = usePreview()
 const selectedFolders = ref<string[]>([])
 const previewFolder = ref<string>('')
 const previewHtml = ref('')
+const showTemplatePreview = ref(false)
+const templatePreviewSrcdoc = ref('')
+const previewAllLoading = ref(false)
 
 const availableSnippets = computed(() => {
   return props.snippets
@@ -126,6 +161,7 @@ function removeSelection(folder: string) {
   }
 }
 
+// hover 迷你预览：只渲染片段本身（保留原有逻辑）
 async function loadPreview(folder: string) {
   if (previewFolder.value === folder) return
 
@@ -133,18 +169,48 @@ async function loadPreview(folder: string) {
   const config = await snippetStore.loadSnippetDetail(folder)
   const html = snippetStore.getSnippetHtml(folder)
   if (config && html) {
-    const data = resolveSnippetData({}, config.sampleData)
+    const data = config.sampleData || {}
     let compiled = html
     try {
-      if (config.formSchema.type === 'array') {
-        compiled = compileTemplate(html, { features: Array.isArray(data) ? data : [] })
-      } else {
-        compiled = compileTemplate(html, { ...(data as Record<string, any>) })
-      }
+      compiled = compileSnippetByType(html, data, config.formSchema.type)
     } catch (e) {
       console.error('Preview compile error:', e)
     }
     previewHtml.value = buildSnippetPreviewHtml(compiled)
+  }
+}
+
+// 单片段模板预览：使用模板 + 该片段的示例数据
+async function openTemplatePreview(folder: string) {
+  if (!props.templateFolder) return
+  try {
+    previewAllLoading.value = true
+    templatePreviewSrcdoc.value = await generateSnippetPreviewHtml({
+      templateFolder: props.templateFolder,
+      snippetFolders: [folder],
+    })
+    showTemplatePreview.value = true
+  } catch (e) {
+    console.error('Template preview failed:', e)
+  } finally {
+    previewAllLoading.value = false
+  }
+}
+
+// 多选片段模板预览：使用模板 + 所有已选片段的示例数据
+async function openSelectedPreview() {
+  if (!props.templateFolder || selectedFolders.value.length === 0) return
+  try {
+    previewAllLoading.value = true
+    templatePreviewSrcdoc.value = await generateSnippetPreviewHtml({
+      templateFolder: props.templateFolder,
+      snippetFolders: [...selectedFolders.value],
+    })
+    showTemplatePreview.value = true
+  } catch (e) {
+    console.error('Template preview failed:', e)
+  } finally {
+    previewAllLoading.value = false
   }
 }
 
@@ -164,6 +230,8 @@ watch(visible, (val) => {
     selectedFolders.value = []
     previewFolder.value = ''
     previewHtml.value = ''
+    showTemplatePreview.value = false
+    templatePreviewSrcdoc.value = ''
   }
 })
 </script>
@@ -268,6 +336,7 @@ watch(visible, (val) => {
 }
 
 .card-preview {
+  position: relative;
   height: 160px;
   background: var(--bg-primary);
   border-top: 1px solid var(--border-color);
@@ -302,6 +371,34 @@ watch(visible, (val) => {
   background: rgba(56, 189, 248, 0.05);
 }
 
+.card-preview-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+  backdrop-filter: blur(4px);
+}
+
+.snippet-card:hover .card-preview-btn {
+  opacity: 1;
+}
+
+.card-preview-btn:hover {
+  background: rgba(16, 185, 129, 0.85);
+  transform: scale(1.05);
+}
+
 .confirm-btn {
   background: linear-gradient(135deg, #38BDF8, #0284C7);
   border-color: #0284C7;
@@ -311,9 +408,25 @@ watch(visible, (val) => {
   background: linear-gradient(135deg, #0EA5E9, #0369A1);
 }
 
+.preview-all-btn {
+  background: #10B981;
+  border-color: #10B981;
+}
+
+.preview-all-btn:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+.dialog-footer :deep(.el-button) {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 </style>

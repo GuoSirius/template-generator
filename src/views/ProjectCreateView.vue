@@ -164,6 +164,7 @@
       v-model="showAddDialog"
       :snippets="snippetStore.snippets"
       :existing-ids="existingSnippetIds"
+      :template-folder="templateFolder"
       @add="onAddSnippet"
     />
 
@@ -195,7 +196,7 @@
       v-model="showQuickPreview"
       :srcdoc="quickPreviewHtml"
       title="页面预览"
-      :height="isFullscreen ? 'calc(100vh - 120px)' : '75vh'"
+      :height="'75vh'"
     />
 
     <!-- 保存确认对话框 -->
@@ -229,12 +230,8 @@ import CustomCssDialog from '@/components/css/CustomCssDialog.vue'
 import CustomJsDialog from '@/components/js/CustomJsDialog.vue'
 import SaveConfirmDialog from '@/components/common/SaveConfirmDialog.vue'
 import PreviewIframe from '@/components/preview/PreviewIframe.vue'
-import {
-  compileTemplate, resolveSnippetData, wrapWithContainer,
-  buildSpacingStyle, replacePlaceholders,
-} from '@/engines/template-engine'
-import { buildPreviewHtml, buildSnippetPreviewHtml } from '@/engines/preview-renderer'
-import { getSnippetHtml } from '@/engines/yaml-parser'
+import PreviewDialog from '@/components/preview/PreviewDialog.vue'
+import { usePreview } from '@/composables/use-preview'
 import type { SnippetConfig as SnippetConfigType, SnippetMeta, Spacing } from '@/types'
 
 const router = useRouter()
@@ -242,6 +239,7 @@ const route = useRoute()
 const projectStore = useProjectStore()
 const templateStore = useTemplateStore()
 const snippetStore = useSnippetStore()
+const { fullPreviewSrcdoc, ensureSnippetResources, setLocalCustomCode } = usePreview()
 
 // State
 const currentStep = ref(1)
@@ -256,8 +254,6 @@ const showQuickPreview = ref(false)
 const showSaveConfirm = ref(false)
 const localCustomCss = ref('')
 const localCustomJs = ref('')
-const quickPreviewKey = ref(0)
-const isFullscreen = ref(false)
 const nameFormRef = ref()
 const nameForm = ref({ name: '' })
 const projectNameValid = ref(false)
@@ -350,57 +346,11 @@ const selectedSnippetData = computed(() => {
   return selectedInstance.value.data
 })
 
-// Step1: template preview (实时预览)
-const templatePreviewHtml = computed(() => {
-  if (!templateStore.currentHtml) return ''
-  return buildPreviewHtml(templateStore.currentHtml, localCustomCss.value)
-})
-
-// Step2: full preview (点击"应用并预览"按钮时触发)
-const fullPreviewHtml = computed(() => {
-  if (!project.value || !templateStore.currentHtml) return ''
-  
-  const enabledInstances = snippetInstances.value.filter(s => s.enabled)
-  
-  if (enabledInstances.length === 0) {
-    return buildPreviewHtml(templateStore.currentHtml, localCustomCss.value)
-  }
-  
-  const renderedSnippets = enabledInstances.map(inst => {
-    const config = snippetStore.configs.get(inst.snippetId)
-    const html = snippetStore.getSnippetHtml(inst.snippetId)
-    if (!html) return null
-    const data = resolveSnippetData(inst.data as Record<string, any>, config?.sampleData || {})
-
-    let compiled = html
-    try {
-      if (config?.formSchema.type === 'array') {
-        compiled = compileTemplate(html, { features: Array.isArray(data) ? data : [data] })
-      } else {
-        compiled = compileTemplate(html, { ...(data as Record<string, any>) })
-      }
-    } catch (e) {
-      console.error('Compile error:', e)
-      return null
-    }
-    const spacingStyle = buildSpacingStyle(inst.properties.spacing)
-    const wrapped = wrapWithContainer(compiled, inst.properties.className, spacingStyle)
-    return { placeholder: inst.properties.placeholder, html: wrapped }
-  }).filter(Boolean) as { placeholder: string; html: string }[]
-
-  let finalHtml = replacePlaceholders(templateStore.currentHtml, renderedSnippets)
-  
-  return buildPreviewHtml(
-    finalHtml,
-    localCustomCss.value,
-    project.value.seo.title,
-    project.value.seo.description,
-    project.value.seo.keywords,
-  )
-})
+// Step1: 实时预览 — 模板 + 已有片段
+const templatePreviewHtml = computed(() => fullPreviewSrcdoc.value)
 
 // Quick preview (same as full preview)
-const quickPreviewHtml = computed(() => fullPreviewHtml.value)
+const quickPreviewHtml = computed(() => fullPreviewSrcdoc.value)
 
 // Watchers
 watch(templateFolder, async (folder) => {
@@ -417,12 +367,15 @@ watch(templateFolder, async (folder) => {
   }
 })
 
-watch(localCustomCss, (val) => {
+watch([localCustomCss, localCustomJs], () => {
+  // 同步本地定制代码到 composable，使预览实时生效
+  setLocalCustomCode(localCustomCss.value, localCustomJs.value)
   if (project.value) {
     try {
-      projectStore.setCustomCss(val)
+      projectStore.setCustomCss(localCustomCss.value)
+      projectStore.setCustomJs(localCustomJs.value)
     } catch (e) {
-      console.error('Failed to set custom CSS:', e)
+      console.error('Failed to sync custom code:', e)
     }
   }
 })
@@ -609,29 +562,11 @@ function onSaveJs(js: string) {
 }
 
 function openQuickPreview() {
-  // 预加载所有snippet的HTML
-  const snippetIds = [...new Set(snippetInstances.value.map(i => i.snippetId))]
-  const loadPromises = snippetIds.map(async (id) => {
-    // 确保config和HTML都被加载
-    if (!snippetStore.configs.has(id)) {
-      await snippetStore.loadSnippetDetail(id)
-    }
-    // 如果HTML缓存为空，手动加载
-    if (!snippetStore.getSnippetHtml(id)) {
-      const html = await getSnippetHtml(id)
-      // 更新到缓存
-      snippetStore.htmlCache.set(id, html)
-    }
-  })
-  
-  // 等待所有加载完成后打开预览
-  Promise.all(loadPromises).then(() => {
-    // 触发重新渲染
-    quickPreviewKey.value++
+  // 确保所有片段资源已加载，然后打开预览
+  ensureSnippetResources().then(() => {
     showQuickPreview.value = true
   }).catch(e => {
     console.error('Failed to load snippets:', e)
-    quickPreviewKey.value++
     showQuickPreview.value = true
   })
 }

@@ -93,6 +93,7 @@ const onClose = () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: 100%;
   padding: 12px 20px;
   border: none;
   border-radius: 10px;
