@@ -106,6 +106,13 @@
               <Eye :size="16" />
             </button>
             <button
+              class="action-icon-btn btn-download"
+              title="下载 HTML"
+              @click="downloadProjectHtml(project)"
+            >
+              <Download :size="16" />
+            </button>
+            <button
               v-if="project.status === 'completed'"
               class="action-icon-btn btn-edit"
               title="编辑"
@@ -175,6 +182,13 @@
                 <Eye :size="16" />
               </button>
               <button
+                class="action-icon-btn btn-download"
+                title="下载 HTML"
+                @click="downloadProjectHtml(row)"
+              >
+                <Download :size="16" />
+              </button>
+              <button
                 v-if="row.status === 'completed'"
                 class="action-icon-btn btn-edit"
                 title="编辑"
@@ -228,11 +242,13 @@ import {
   Play,
   Copy,
   Trash2,
+  Download,
 } from 'lucide-vue-next'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/project'
 import PreviewIframe from '@/components/preview/PreviewIframe.vue'
 import { usePreview } from '@/composables/use-preview'
+import { downloadHtmlPackage } from '@/utils/html-download'
 import type { Project } from '@/types'
 
 const router = useRouter()
@@ -385,6 +401,16 @@ const confirmDelete = (project: Project) => {
       ElMessage.success('删除成功')
     })
     .catch(() => {})
+}
+
+const downloadProjectHtml = async (project: Project) => {
+  try {
+    const renderedHtml = await generatePreviewHtml(project)
+    const safeProjectName = project.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')
+    await downloadHtmlPackage(renderedHtml, renderedHtml, safeProjectName)
+  } catch {
+    ElMessage.error('下载失败')
+  }
 }
 
 const previewProject = async (project: Project) => {
@@ -762,6 +788,9 @@ onMounted(async () => {
 }
 .btn-resume {
   background: #0ea5e9;
+}
+.btn-download {
+  background: #10b981;
 }
 .btn-copy {
   background: #8b5cf6;

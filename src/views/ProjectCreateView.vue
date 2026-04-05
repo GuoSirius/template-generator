@@ -156,6 +156,10 @@
         </button>
       </div>
       <div v-if="currentStep === 2" class="action-right">
+        <button class="action-btn btn-secondary" @click="onDownloadHtml">
+          <Download :size="18" />
+          下载 HTML
+        </button>
         <button class="action-btn btn-primary" @click="onSaveProject">
           <Save :size="18" />
           保存并完成
@@ -238,6 +242,7 @@ import {
   FileCode2,
   Code,
   Plus,
+  Download,
 } from 'lucide-vue-next'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/project'
@@ -256,6 +261,7 @@ import SaveConfirmDialog from '@/components/common/SaveConfirmDialog.vue'
 import PreviewIframe from '@/components/preview/PreviewIframe.vue'
 import PreviewDialog from '@/components/preview/PreviewDialog.vue'
 import { usePreview } from '@/composables/use-preview'
+import { downloadHtmlPackage } from '@/utils/html-download'
 import type { SnippetConfig as SnippetConfigType, SnippetMeta, Spacing } from '@/types'
 
 const router = useRouter()
@@ -268,6 +274,7 @@ const {
   ensureSnippetResources,
   setLocalCustomCode,
   generateSnippetPreviewHtml,
+  generatePreviewHtml,
 } = usePreview()
 
 // State
@@ -710,10 +717,60 @@ function onTabChange(tabName: string | number) {
   }
 }
 
+async function onDownloadHtml() {
+  // 确保所有片段资源已加载（使用最新数据）
+  await ensureSnippetResources()
+
+  // 使用最新数据生成渲染好的 HTML
+  const currentProjectData = {
+    ...project.value,
+    seo: seoInfo.value,
+    customCss: localCustomCss.value,
+    customJs: localCustomJs.value,
+    snippetInstances: snippetInstances.value.map((s) => ({
+      id: s.id,
+      snippetId: s.snippetId,
+      enabled: s.enabled,
+      data: s.data,
+      properties: s.properties,
+    })),
+  }
+  const renderedHtml = await generatePreviewHtml(currentProjectData)
+
+  // 打包下载 HTML 文件（格式化版 + 压缩版）
+  const safeProjectName = nameForm.value.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')
+  await downloadHtmlPackage(renderedHtml, renderedHtml, safeProjectName)
+}
+
 async function onSaveProject() {
   if (!project.value) return
+
+  // 1. 首先确保所有片段资源已加载（使用最新数据）
+  await ensureSnippetResources()
+
+  // 2. 使用最新数据生成渲染好的 HTML
+  const currentProjectData = {
+    ...project.value,
+    seo: seoInfo.value,
+    customCss: localCustomCss.value,
+    customJs: localCustomJs.value,
+    snippetInstances: snippetInstances.value.map((s) => ({
+      id: s.id,
+      snippetId: s.snippetId,
+      enabled: s.enabled,
+      data: s.data,
+      properties: s.properties,
+    })),
+  }
+  const renderedHtml = await generatePreviewHtml(currentProjectData)
+
+  // 3. 保存项目
   projectStore.completeProject()
   await projectStore.saveCurrentProject()
+
+  // 4. 下载 HTML 打包文件（格式化版 + 压缩版）
+  const safeProjectName = nameForm.value.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')
+  await downloadHtmlPackage(renderedHtml, renderedHtml, safeProjectName)
 
   // 更新初始状态，防止保存后仍提示离开确认
   initialState.value = JSON.stringify({
