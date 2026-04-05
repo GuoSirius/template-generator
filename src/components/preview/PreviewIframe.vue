@@ -12,7 +12,7 @@
         ref="iframeEl"
         class="preview-iframe"
         :srcdoc="srcdoc"
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts allow-same-origin allow-modals"
         @load="onIframeLoad"
       />
     </div>

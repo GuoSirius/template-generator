@@ -23,3 +23,16 @@ snippets:
     thumbnail: "partners-section/thumbnail.png"
     folder: "partners-section"
     tags: ["partners", "logo", "合作"]
+  - name: "多预览图示例"
+    version: "1.0.0"
+    description: "演示多预览图功能的示例片段，支持多个预览图片展示"
+    thumbnail: "example-multi-preview/thumbnail.png"
+    previewImages:
+      - url: "example-multi-preview/preview1.png"
+        description: "示例预览图1"
+      - url: "example-multi-preview/preview2.png"
+        description: "示例预览图2"
+      - url: "example-multi-preview/preview3.png"
+        description: "示例预览图3"
+    folder: "example-multi-preview"
+    tags: ["example", "demo", "multi-preview"]

@@ -152,14 +152,14 @@
               >
                 <el-input
                   v-if="field.type === 'text'"
-                  :model-value="objectData[group.name][field.key]"
+                  :model-value="objectData[group.name]?.[field.key]"
                   @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
                   :placeholder="field.placeholder || ''"
                   :maxlength="200"
                 />
                 <el-input
                   v-else-if="field.type === 'textarea'"
-                  :model-value="objectData[group.name][field.key]"
+                  :model-value="objectData[group.name]?.[field.key]"
                   @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
                   type="textarea"
                   :rows="3"
@@ -190,7 +190,7 @@
                 />
                 <el-input
                   v-else-if="field.type === 'image'"
-                  :model-value="objectData[group.name][field.key]"
+                  :model-value="objectData[group.name]?.[field.key]"
                   @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
                   :placeholder="field.placeholder || '图片 URL'"
                 />
@@ -203,7 +203,7 @@
             <h4 class="group-title">{{ group.label }}</h4>
             <div class="array-list">
               <div
-                v-for="(item, index) in objectData[group.name]"
+                v-for="(item, index) in (objectData[group.name] || [])"
                 :key="index"
                 class="array-item"
               >
@@ -293,6 +293,7 @@ import { getDefaultFormData, createEmptyFormData, isItemCompleted, isListItemCom
 const props = defineProps<{
   schema: FormSchema
   modelValue: Record<string, any> | Record<string, any>[]
+  sampleData?: Record<string, any> | Record<string, any>[]
 }>()
 
 const emit = defineEmits<{
@@ -360,13 +361,50 @@ function handleInput(field: FieldDef, value: any) {
 function initFromValue() {
   if (isInternalUpdate) return
 
+  // 判断是否有有效的数据
+  const hasValidModelValue = () => {
+    if (!props.modelValue) return false
+    if (Array.isArray(props.modelValue)) {
+      return props.modelValue.length > 0
+    } else if (typeof props.modelValue === 'object') {
+      return Object.keys(props.modelValue).length > 0
+    }
+    return false
+  }
+
+  // 判断是否有示例数据
+  const hasSampleData = () => {
+    if (!props.sampleData) return false
+    if (Array.isArray(props.sampleData)) {
+      return props.sampleData.length > 0
+    } else if (typeof props.sampleData === 'object') {
+      return Object.keys(props.sampleData).length > 0
+    }
+    return false
+  }
+
   if (props.schema.type === 'objectWithList') {
     // objectWithList 类型
-    if (props.modelValue && typeof props.modelValue === 'object' && !Array.isArray(props.modelValue) && Object.keys(props.modelValue).length > 0) {
+    if (hasValidModelValue()) {
+      // 有有效数据，使用 modelValue
+      // 确保所有 groups 在 objectData 中都有对应的键
+      if (props.schema.groups) {
+        for (const group of props.schema.groups) {
+          if (!objectData[group.name]) {
+            if (group.type === 'object') {
+              objectData[group.name] = {}
+            } else if (group.type === 'array') {
+              objectData[group.name] = []
+            }
+          }
+        }
+      }
       Object.assign(objectData, props.modelValue)
+    } else if (hasSampleData()) {
+      // 没有有效数据，但有示例数据，使用示例数据
+      Object.assign(objectData, props.sampleData)
     } else {
-      const defaults = getDefaultFormData(props.schema)
-      // 初始化每个 group 的数据
+      // 都没有，初始化默认值
       if (props.schema.groups) {
         for (const group of props.schema.groups) {
           if (group.type === 'object') {
@@ -383,22 +421,34 @@ function initFromValue() {
             }
             arrData.push(itemData)
             objectData[group.name] = arrData
+            // 确保 partners 数组至少有一个空项，避免模板访问 undefined
+            if (group.name === 'partners' && arrData.length === 0) {
+              const emptyItem: Record<string, any> = {}
+              for (const field of group.fields) {
+                emptyItem[field.key] = field.default ?? ''
+              }
+              objectData[group.name].push(emptyItem)
+            }
           }
         }
       }
     }
   } else if (props.schema.type === 'object') {
-    if (props.modelValue && typeof props.modelValue === 'object' && !Array.isArray(props.modelValue) && Object.keys(props.modelValue).length > 0) {
+    if (hasValidModelValue()) {
       Object.assign(objectData, props.modelValue)
+    } else if (hasSampleData()) {
+      Object.assign(objectData, props.sampleData)
     } else {
       const defaults = getDefaultFormData(props.schema)
       Object.keys(objectData).forEach(k => delete objectData[k])
       Object.assign(objectData, defaults)
     }
   } else {
-    // array 类型：初始为空数组，添加时再创建
+    // array 类型
     if (Array.isArray(props.modelValue) && props.modelValue.length > 0) {
       arrayList.splice(0, arrayList.length, ...JSON.parse(JSON.stringify(props.modelValue)))
+    } else if (Array.isArray(props.sampleData) && props.sampleData.length > 0) {
+      arrayList.splice(0, arrayList.length, ...JSON.parse(JSON.stringify(props.sampleData)))
     } else {
       // 初始为空，不添加默认项
       arrayList.splice(0, arrayList.length)
@@ -408,6 +458,17 @@ function initFromValue() {
 
 initFromValue()
 watch(() => props.modelValue, initFromValue, { deep: true })
+// 监听 schema 变化，当切换不同片段时重新初始化数据
+watch(() => props.schema, () => {
+  // 清空现有数据
+  if (props.schema.type === 'object' || props.schema.type === 'objectWithList') {
+    Object.keys(objectData).forEach(key => delete objectData[key])
+  } else if (props.schema.type === 'array') {
+    arrayList.splice(0, arrayList.length)
+  }
+  // 重新初始化
+  initFromValue()
+}, { deep: true })
 
 // 获取所有字段
 const allFields = getFieldsForSchema()

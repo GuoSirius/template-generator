@@ -58,7 +58,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { CheckCircle2, AlertCircle, Eye, Maximize2, Minimize2 } from 'lucide-vue-next'
+import { CheckCircle2, AlertCircle, Eye } from 'lucide-vue-next'
 import { ElMessageBox } from 'element-plus'
 import { validateCss } from '@/engines/css-engine'
 import { usePreview } from '@/composables/use-preview'
@@ -79,12 +79,12 @@ const emit = defineEmits<{
   save: [value: string]
 }>()
 
-const { previewSrcdoc } = usePreview()
-
 const dialogVisible = computed({
   get: () => props.visible ?? false,
   set: (val: boolean) => emit('update:visible', val)
 })
+
+const { previewSrcdoc } = usePreview()
 
 const cssCode = ref('')
 const originalCode = ref('')
@@ -93,9 +93,10 @@ const editorRef = ref<HTMLTextAreaElement>()
 
 const cssValidation = computed(() => validateCss(String(cssCode.value)))
 
-// 计算预览 HTML：使用 usePreview 统一管道，传入编辑中的 CSS
+// 计算预览 HTML：使用 previewSrcdoc 方法，传入编辑中的 CSS
+// previewSrcdoc 内部会处理模板 HTML 的 body 提取和占位符替换
 const previewSrcdocValue = previewSrcdoc({
-  css: String(cssCode.value),
+  css: cssCode.value,  // 直接访问响应式数据
   templateHtml: props.templateHtml,
   seoTitle: props.seoTitle,
 })

@@ -28,6 +28,9 @@
             </div>
           </div>
           <div class="item-actions">
+            <button class="preview-btn" title="预览此片段" @click.stop="previewSnippet(element.id)">
+              <Eye :size="14" />
+            </button>
             <el-switch
               :model-value="element.enabled"
               size="small"
@@ -61,7 +64,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import draggable from 'vuedraggable'
-import { GripVertical, MoreHorizontal, Copy, Trash2 } from 'lucide-vue-next'
+import { GripVertical, MoreHorizontal, Copy, Trash2, Eye } from 'lucide-vue-next'
 import type { SnippetInstance, SnippetMeta } from '@/types'
 
 const props = defineProps<{
@@ -77,6 +80,7 @@ const emit = defineEmits<{
   delete: [id: string]
   toggle: [id: string, enabled: boolean]
   reorder: [instances: SnippetInstance[]]
+  preview: [id: string]
 }>()
 
 const localInstances = computed({
@@ -101,6 +105,10 @@ function handleCommand(cmd: string, id: string) {
   } else if (cmd === 'delete') {
     emit('delete', id)
   }
+}
+
+function previewSnippet(id: string) {
+  emit('preview', id)
 }
 
 function onDragEnd() {
@@ -221,6 +229,25 @@ function onDragEnd() {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.preview-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.preview-btn:hover {
+  background: var(--bg-tertiary);
+  color: #10B981;
 }
 
 .more-btn {

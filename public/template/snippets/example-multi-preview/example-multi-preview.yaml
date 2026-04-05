@@ -1,0 +1,23 @@
+className: "example-multi-preview"
+defaultPlaceholder: "example-section"
+defaults:
+  title: "多预览图示例"
+  description: "这是一个演示多预览图功能的示例片段"
+formSchema:
+  type: "object"
+  fields:
+    - key: "title"
+      label: "标题"
+      type: "text"
+      default: "多预览图示例"
+      placeholder: "请输入标题"
+      required: true
+      trim: true
+    - key: "description"
+      label: "描述"
+      type: "textarea"
+      default: "这是一个演示多预览图功能的示例片段"
+      placeholder: "请输入描述"
+sampleData:
+  title: "多预览图示例"
+  description: "这是一个演示多预览图功能的示例片段，支持多个预览图片"

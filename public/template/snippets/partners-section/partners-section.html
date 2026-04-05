@@ -1,19 +1,19 @@
 <div class="partners-section">
   <div class="partners-header">
-    <h2 class="partners-title">{{ header.title }}</h2>
-    <p class="partners-subtitle">{{ header.subtitle }}</p>
+    <h2 class="partners-title"><%= header.title %></h2>
+    <p class="partners-subtitle"><%= header.subtitle %></p>
   </div>
   <div class="partners-grid">
-    {{#each partners }}
+    <% partners.forEach(function(partner) { %>
     <div class="partner-item">
-      {{#if logo }}
-      <img src="{{ logo }}" alt="{{ name }}" class="partner-logo">
-      {{ else }}
-      <div class="partner-logo-placeholder">{{ name }}</div>
-      {{/if}}
-      <span class="partner-name">{{ name }}</span>
+      <% if (partner.logo) { %>
+      <img src="<%= partner.logo %>" alt="<%= partner.name %>" class="partner-logo">
+      <% } else { %>
+      <div class="partner-logo-placeholder"><%= partner.name %></div>
+      <% } %>
+      <span class="partner-name"><%= partner.name %></span>
     </div>
-    {{/each}}
+    <% }) %>
   </div>
 </div>
 

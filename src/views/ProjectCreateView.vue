@@ -67,7 +67,7 @@
         <!-- 右侧：模板预览 -->
         <div class="step1-right">
           <PreviewIframe
-            v-if="templatePreviewHtml"
+            v-if="templateStore.currentHtml"
             :srcdoc="templatePreviewHtml"
             class="step-preview"
           >
@@ -77,7 +77,8 @@
           </PreviewIframe>
           <div v-else class="preview-placeholder">
             <FileCode2 :size="48" />
-            <p>选择模板后查看预览</p>
+            <p v-if="!templateFolder">选择模板后查看预览</p>
+            <p v-else>正在加载模板...</p>
           </div>
         </div>
       </div>
@@ -100,6 +101,7 @@
               @delete="onDeleteSnippet"
               @toggle="onToggleSnippet"
               @reorder="onReorderSnippets"
+              @preview="onPreviewSnippet"
             />
           </div>
           <button class="add-snippet-btn" @click="showAddDialog = true">
@@ -125,6 +127,7 @@
                 v-if="selectedSnippetConfig"
                 :schema="selectedSnippetConfig.formSchema"
                 :model-value="selectedSnippetData"
+                :sample-data="selectedSnippetConfig?.sampleData"
                 @update:model-value="onUpdateSnippetData"
               />
               <div v-else class="config-empty-data">
@@ -165,6 +168,11 @@
       :snippets="snippetStore.snippets"
       :existing-ids="existingSnippetIds"
       :template-folder="templateFolder"
+      :custom-css="localCustomCss"
+      :custom-js="localCustomJs"
+      :seo-title="seoInfo.title"
+      :seo-description="seoInfo.description"
+      :seo-keywords="seoInfo.keywords"
       @add="onAddSnippet"
     />
 
@@ -199,6 +207,14 @@
       :height="'75vh'"
     />
 
+    <!-- 片段预览对话框 -->
+    <PreviewDialog
+      v-model="showSnippetPreview"
+      :srcdoc="snippetPreviewHtml"
+      title="片段预览"
+      :height="'75vh'"
+    />
+
     <!-- 保存确认对话框 -->
     <SaveConfirmDialog
       v-model="showSaveConfirm"
@@ -210,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import { Paintbrush, Eye, ChevronRight, ChevronLeft,
   Save, FileCode2, Code, Plus,
@@ -239,7 +255,7 @@ const route = useRoute()
 const projectStore = useProjectStore()
 const templateStore = useTemplateStore()
 const snippetStore = useSnippetStore()
-const { fullPreviewSrcdoc, ensureSnippetResources, setLocalCustomCode } = usePreview()
+const { fullPreviewSrcdoc, ensureSnippetResources, setLocalCustomCode, generateSnippetPreviewHtml } = usePreview()
 
 // State
 const currentStep = ref(1)
@@ -251,9 +267,12 @@ const showAddDialog = ref(false)
 const showCssDialog = ref(false)
 const showJsDialog = ref(false)
 const showQuickPreview = ref(false)
+const showSnippetPreview = ref(false)
 const showSaveConfirm = ref(false)
 const localCustomCss = ref('')
 const localCustomJs = ref('')
+const snippetPreviewHtml = ref('')
+const templateLoaded = ref(false)
 const nameFormRef = ref()
 const nameForm = ref({ name: '' })
 const projectNameValid = ref(false)
@@ -353,17 +372,47 @@ const templatePreviewHtml = computed(() => fullPreviewSrcdoc.value)
 const quickPreviewHtml = computed(() => fullPreviewSrcdoc.value)
 
 // Watchers
-watch(templateFolder, async (folder) => {
-  if (folder) {
-    await templateStore.selectTemplate(folder)
-    // 加载模板后,填充 SEO 默认值
-    if (templateStore.currentConfig?.seo && !isSeoFilled.value) {
-      seoInfo.value = { ...templateStore.currentConfig.seo }
+// 当从 Step 2 返回 Step 1 时，确保模板预览立即可见
+watch(currentStep, async (step, oldStep) => {
+  if (step === 1 && oldStep === 2 && templateFolder.value) {
+    // 刚从 Step 2 返回 Step 1，立即确保预览可见
+    if (templateStore.currentHtml) {
+      // 模板内容已就绪，标记加载完成
+      templateLoaded.value = true
+    } else if (!templateLoaded.value) {
+      // 模板内容未加载，重新触发
+      templateLoaded.value = false
+      await templateStore.selectTemplate(templateFolder.value).catch(() => {})
+      templateLoaded.value = true
     }
-    // SEO 标题默认和项目名称保持一致
-    if (nameForm.value.name && !seoInfo.value.title) {
-      seoInfo.value.title = nameForm.value.name
-    }
+  }
+})
+
+watch(templateFolder, async (folder, oldFolder) => {
+  // 值没变化且已加载，不需要处理
+  if (folder === oldFolder) return
+  if (!folder) {
+    templateLoaded.value = false
+    return
+  }
+
+  // 模板已加载且就是当前选择的，直接跳过
+  if (templateStore.currentTemplate?.folder === folder && templateLoaded.value) {
+    return
+  }
+
+  // 加载模板
+  templateLoaded.value = false
+  await templateStore.selectTemplate(folder)
+  templateLoaded.value = true
+
+  // 填充 SEO 默认值
+  if (templateStore.currentConfig?.seo && !isSeoFilled.value) {
+    seoInfo.value = { ...templateStore.currentConfig.seo }
+  }
+  // SEO 标题默认和项目名称保持一致
+  if (nameForm.value.name && !seoInfo.value.title) {
+    seoInfo.value.title = nameForm.value.name
   }
 })
 
@@ -399,7 +448,7 @@ watch(nameForm, (val) => {
 }, { deep: true })
 
 // Methods
-function goToStep1() {
+async function goToStep1() {
   currentStep.value = 1
   // 返回Step1时更新项目状态
   if (project.value) {
@@ -410,6 +459,25 @@ function goToStep1() {
       currentStep: 1,
     })
     projectStore.setStep(1)
+  }
+
+  // 确保模板已加载，即使 templateFolder 值没有变化
+  if (templateFolder.value && !templateLoaded.value) {
+    try {
+      templateLoaded.value = false
+      await templateStore.selectTemplate(templateFolder.value)
+      templateLoaded.value = true
+    } catch (e) {
+      console.error('Failed to load template when returning to step 1:', e)
+      templateLoaded.value = false
+    }
+  }
+
+  // 异步预加载片段资源（不阻塞预览），片段会在后台补充到 htmlCache 中
+  if (snippetInstances.value.length > 0) {
+    const snippetIds = [...new Set(snippetInstances.value.map(inst => inst.snippetId))]
+    // 静默后台加载，不等待，不影响当前预览
+    snippetIds.forEach(id => snippetStore.loadSnippetDetail(id).catch(() => {}))
   }
 }
 
@@ -540,9 +608,40 @@ function onUpdateProperties(props: { spacing: Spacing; placeholder: string; clas
   projectStore.updateSnippetInstance(selectedInstance.value.id, { properties: props })
 }
 
-function onUpdateSnippetData(data: Record<string, any> | Record<string, any>[]) {
+function onUpdateSnippetData(data: Record<string, unknown> | Record<string, unknown>[]) {
   if (!selectedInstance.value) return
   projectStore.updateSnippetInstance(selectedInstance.value.id, { data })
+}
+
+async function onPreviewSnippet(id: string) {
+  const instance = snippetInstances.value.find(s => s.id === id)
+  if (!instance) return
+  
+  try {
+    // 确保模板已加载
+    if (!templateFolder.value) {
+      ElMessage.warning('请先选择模板')
+      return
+    }
+    
+    // 使用 generateSnippetPreviewHtml 生成完整的预览HTML
+    // 包含：模板 + 当前片段 + 自定义CSS/JS + SEO
+    const previewHtml = await generateSnippetPreviewHtml({
+      templateFolder: templateFolder.value,
+      snippetFolders: [instance.snippetId],
+      customCss: localCustomCss.value,
+      customJs: localCustomJs.value,
+      seoTitle: seoInfo.value.title,
+      seoDescription: seoInfo.value.description,
+      seoKeywords: seoInfo.value.keywords
+    })
+    
+    snippetPreviewHtml.value = previewHtml
+    showSnippetPreview.value = true
+  } catch (e) {
+    console.error('Failed to generate snippet preview:', e)
+    ElMessage.error('生成预览失败')
+  }
 }
 
 function onSaveCss(css: string) {
@@ -581,6 +680,23 @@ async function onSaveProject() {
   if (!project.value) return
   projectStore.completeProject()
   await projectStore.saveCurrentProject()
+  
+  // 更新初始状态，防止保存后仍提示离开确认
+  initialState.value = JSON.stringify({
+    name: nameForm.value.name,
+    templateId: templateFolder.value,
+    seo: seoInfo.value,
+    customCss: localCustomCss.value,
+    customJs: localCustomJs.value,
+    snippets: snippetInstances.value.map(s => ({
+      id: s.id,
+      snippetId: s.snippetId,
+      enabled: s.enabled,
+      data: s.data,
+      properties: s.properties,
+    })),
+  })
+  
   showSaveConfirm.value = true
 }
 
@@ -590,15 +706,39 @@ function onGoToList() {
 
 async function onNewCreate(copyData: boolean) {
   if (copyData && project.value) {
-    // 复制当前数据新建
+    // 复制当前数据新建，保留当前数据
     const copy = await projectStore.duplicateProject(project.value.id)
     if (copy) {
       router.push(`/create/${copy.id}?mode=resume`)
       return
     }
   }
-  // 清空所有数据新建
-  router.push('/create')
+  // 清空所有数据新建，跳转到第一步
+  // 1. 清除当前项目
+  projectStore.currentProject = null
+  // 2. 重置所有表单状态
+  templateFolder.value = ''
+  nameForm.value.name = ''
+  seoInfo.value = { title: '', keywords: '', description: '' }
+  localCustomCss.value = ''
+  localCustomJs.value = ''
+  // 3. 同步清空本地定制代码到预览系统
+  setLocalCustomCode('', '')
+  selectedSnippetId.value = null
+  currentStep.value = 1
+  projectNameValid.value = false
+  // 3.5 重置片段就绪标志（init会重新设置）
+  // 4. 重置初始状态
+  initialState.value = JSON.stringify({
+    name: nameForm.value.name,
+    templateId: templateFolder.value,
+    seo: seoInfo.value,
+    customCss: localCustomCss.value,
+    customJs: localCustomJs.value,
+    snippets: [],
+  })
+  // 5. 关闭保存确认对话框
+  showSaveConfirm.value = false
 }
 
 // Init
@@ -623,8 +763,23 @@ async function init() {
       }
     }
   } else {
-    // 没有项目ID时,保持在步骤1
+    // 没有项目ID时,清除当前项目,保持在步骤1
+    // 这是修复bug的关键：当从模板列表直接点击创建菜单进入时，清除之前的项目数据
+    if (projectStore.currentProject) {
+      // 清除当前项目，确保预览不会显示上次的代码片段
+      projectStore.currentProject = null
+    }
+    // 重置所有表单状态
+    templateFolder.value = ''
+    nameForm.value.name = ''
+    seoInfo.value = { title: '', keywords: '', description: '' }
+    localCustomCss.value = ''
+    localCustomJs.value = ''
+    // 同步清空本地定制代码到预览系统
+    setLocalCustomCode('', '')
+    selectedSnippetId.value = null
     currentStep.value = 1
+    projectNameValid.value = false
   }
 
   // Load templates and snippets
@@ -633,19 +788,39 @@ async function init() {
     snippetStore.loadSnippets(),
   ])
 
-  // 自动选择第一个有效模板
+  // 等待模板加载完成，确保validTemplates计算属性更新
+  await nextTick()
+
+  // 自动选择第一个有效模板（如果没有选择模板）
   if (!templateFolder.value && validTemplates.value.length > 0) {
     templateFolder.value = validTemplates.value[0].folder
-  }
-
-  // If we have a template selected, load its config
-  if (templateFolder.value) {
+    
+    // 立即触发模板加载，不依赖watch
+    templateLoaded.value = false
     await templateStore.selectTemplate(templateFolder.value)
+    templateLoaded.value = true
+    
+    // 加载模板后,填充 SEO 默认值
+    if (templateStore.currentConfig?.seo && !isSeoFilled.value) {
+      seoInfo.value = { ...templateStore.currentConfig.seo }
+    }
+    // SEO 标题默认和项目名称保持一致
+    if (nameForm.value.name && !seoInfo.value.title) {
+      seoInfo.value.title = nameForm.value.name
+    }
+  } else if (templateFolder.value && !templateLoaded.value) {
+    // 如果已经有模板选择但未加载，确保加载模板
+    templateLoaded.value = false
+    await templateStore.selectTemplate(templateFolder.value)
+    templateLoaded.value = true
   }
 
-  // Load all snippet configs for existing instances
-  for (const inst of snippetInstances.value) {
-    await snippetStore.loadSnippetDetail(inst.snippetId)
+  // Load all snippet configs for existing instances (并行加载，避免时序问题)
+  // 注意：不再等待完成才显示预览，fullPreviewSrcdoc 会立即渲染模板+已有片段
+  if (snippetInstances.value.length > 0) {
+    const snippetIds = [...new Set(snippetInstances.value.map(inst => inst.snippetId))]
+    // 静默后台加载，不阻塞 init 返回
+    snippetIds.forEach(id => snippetStore.loadSnippetDetail(id).catch(() => {}))
   }
 
   // 初始化选中的片段: 优先使用上次选中的,否则选中第一个
@@ -677,7 +852,7 @@ async function init() {
 onMounted(() => {
   init()
   // 设置离开页面确认
-  onBeforeRouteLeave(async (_to, _from) => {
+  onBeforeRouteLeave(async () => {
     if (checkDataChanged()) {
       try {
         await ElMessageBox.confirm(

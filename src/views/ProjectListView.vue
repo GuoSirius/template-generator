@@ -41,6 +41,15 @@
 
     <!-- 卡片模式 -->
     <div v-if="viewMode === 'card' && sortedProjects.length > 0" class="card-grid">
+      <div class="card-select-all">
+        <el-checkbox
+          :model-value="selectedProjects.length === sortedProjects.length && sortedProjects.length > 0"
+          :indeterminate="selectedProjects.length > 0 && selectedProjects.length < sortedProjects.length"
+          @change="toggleSelectAll"
+        >
+          全选 ({{ selectedProjects.length }}/{{ sortedProjects.length }})
+        </el-checkbox>
+      </div>
       <div v-for="project in sortedProjects" :key="project.id" class="project-card" :class="{ selected: selectedProjects.includes(project.id) }">
         <div class="card-checkbox">
           <el-checkbox
@@ -60,7 +69,15 @@
               {{ project.status === 'completed' ? '已完成' : '制作中' }}
             </span>
           </div>
-          <p class="card-meta">{{ formatDate(project.updatedAt) }}</p>
+          <div class="card-meta">
+            <div class="time-info">
+              <span class="time-label">创建:</span>
+              <span class="time-value">{{ formatDate(project.createdAt) }}</span>
+              <span class="time-separator">|</span>
+              <span class="time-label">更新:</span>
+              <span class="time-value">{{ formatDate(project.updatedAt) }}</span>
+            </div>
+          </div>
           <div class="card-actions">
             <button class="action-icon-btn btn-preview" title="预览" @click="previewProject(project)">
               <Eye :size="16" />
@@ -108,6 +125,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="templateId" label="模板" width="120" />
+        <el-table-column label="创建时间" width="180">
+          <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+        </el-table-column>
         <el-table-column label="更新时间" width="180">
           <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
         </el-table-column>
@@ -458,6 +478,16 @@ onMounted(async () => {
   gap: 20px;
 }
 
+.card-select-all {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
 .project-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -569,11 +599,34 @@ onMounted(async () => {
   color: #F59E0B;
 }
 
-.card-meta {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-}
+        .card-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin-bottom: 12px;
+        }
+
+        .time-info {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          justify-content: flex-start;
+        }
+
+        .time-label {
+          color: var(--text-muted);
+          font-weight: 500;
+        }
+
+        .time-value {
+          color: var(--text-secondary);
+        }
+
+        .time-separator {
+          color: var(--text-muted);
+          margin: 0 2px;
+        }
 
 .card-actions {
   display: flex;

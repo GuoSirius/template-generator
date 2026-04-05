@@ -1,0 +1,61 @@
+<div class="example-multi-preview">
+  <div class="example-header">
+    <h2><%= title %></h2>
+    <p><%= description %></p>
+  </div>
+  <div class="example-content">
+    <p>这是一个演示多预览图功能的示例片段。当片段配置中包含previewImages数组时，系统会显示多个预览图。</p>
+    <div class="preview-demo">
+      <h3>多预览图功能已启用</h3>
+      <p>在片段选择对话框中，您可以看到多个预览图的缩略图，点击可以放大查看。</p>
+    </div>
+  </div>
+</div>
+
+<style>
+.example-multi-preview {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.example-header h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: white;
+}
+
+.example-header p {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.example-content {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.preview-demo {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+}
+
+.preview-demo h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.preview-demo p {
+  font-size: 14px;
+  opacity: 0.8;
+}
+</style>

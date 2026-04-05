@@ -4,7 +4,7 @@
       :model-value="visible"
       @update:model-value="$emit('update:modelValue', $event)"
       title="添加片段"
-      width="800px"
+      width="1000px"
       :close-on-click-modal="false"
       destroy-on-close
     >
@@ -30,6 +30,7 @@
           class="snippet-card"
           :class="{ selected: selectedFolders.includes(snippet.folder) }"
           @click="toggleSelection(snippet.folder)"
+          @dblclick="handleDoubleClick(snippet.folder)"
         >
           <div class="card-order" v-if="selectedFolders.includes(snippet.folder)">
             {{ selectedFolders.indexOf(snippet.folder) + 1 }}
@@ -37,7 +38,13 @@
           <div class="card-body">
             <h4 class="card-name">{{ snippet.name }}</h4>
             <span class="card-version">v{{ snippet.version }}</span>
-            <p class="card-desc">{{ snippet.description }}</p>
+            <el-tooltip
+              :content="snippet.description"
+              placement="top"
+              :disabled="!snippet.description || snippet.description.length <= 60"
+            >
+              <p class="card-desc">{{ snippet.description }}</p>
+            </el-tooltip>
             <div class="card-tags">
               <el-tag v-for="tag in snippet.tags" :key="tag" size="small" effect="plain">
                 {{ tag }}
@@ -45,22 +52,48 @@
             </div>
           </div>
           <div class="card-preview">
-            <div v-if="previewFolder === snippet.folder && previewHtml" class="preview-area">
-              <iframe :srcdoc="previewHtml" class="preview-iframe" sandbox="allow-modals allow-scripts allow-same-origin" />
+            <!-- 缩略图预览 -->
+            <div class="thumbnail-preview">
+              <div v-if="hasPreviewImages(snippet)" class="thumbnail-image" @click.stop="openImagePreview()">
+                <el-image
+                  :src="getFirstPreviewImage(snippet)"
+                  :alt="snippet.name"
+                  :preview-src-list="getAllPreviewImages(snippet)"
+                  :preview-teleported="true"
+                  :z-index="9999"
+                  fit="contain"
+                  class="thumbnail-el-image"
+                />
+                <div class="preview-count" v-if="getPreviewImagesCount(snippet) > 1">
+                  {{ getPreviewImagesCount(snippet) }}张
+                </div>
+              </div>
+              <div v-else-if="getThumbnailUrl(snippet.thumbnail)" class="thumbnail-image" @click.stop="openImagePreview()">
+                <el-image
+                  :src="getThumbnailUrl(snippet.thumbnail)"
+                  :alt="snippet.name"
+                  :preview-src-list="[getThumbnailUrl(snippet.thumbnail)]"
+                  :preview-teleported="true"
+                  :z-index="9999"
+                  fit="contain"
+                  class="thumbnail-el-image"
+                />
+              </div>
+              <div v-else class="thumbnail-placeholder">
+                <Image :size="32" />
+                <span>无缩略图</span>
+              </div>
             </div>
-            <div v-else class="preview-placeholder" @mouseenter="loadPreview(snippet.folder)">
-              <Eye :size="24" />
-              <span>点击选择</span>
+            <div class="card-preview-actions" v-if="templateFolder">
+              <button
+                class="template-preview-btn"
+                title="在模板中预览此片段"
+                @click.stop="openTemplatePreview(snippet.folder)"
+              >
+                <Eye :size="14" />
+                <span>模板预览</span>
+              </button>
             </div>
-            <button
-              v-if="templateFolder"
-              class="card-preview-btn"
-              title="在模板中预览此片段"
-              @click.stop="openTemplatePreview(snippet.folder)"
-            >
-              <Eye :size="14" />
-              <span>模板预览</span>
-            </button>
           </div>
         </div>
       </div>
@@ -102,11 +135,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Eye } from 'lucide-vue-next'
+import { Eye, Image } from 'lucide-vue-next'
 import type { SnippetMeta } from '@/types'
-import { useSnippetStore } from '@/stores/snippet'
-import { compileSnippetByType } from '@/composables/use-preview'
-import { buildSnippetPreviewHtml } from '@/engines/preview-renderer'
 import { usePreview } from '@/composables/use-preview'
 import PreviewDialog from '@/components/preview/PreviewDialog.vue'
 
@@ -115,6 +145,11 @@ const props = defineProps<{
   snippets: SnippetMeta[]
   existingIds: string[]
   templateFolder?: string
+  customCss?: string
+  customJs?: string
+  seoTitle?: string
+  seoDescription?: string
+  seoKeywords?: string
 }>()
 
 const emit = defineEmits<{
@@ -127,11 +162,8 @@ const visible = computed({
   set: (val: boolean) => emit('update:modelValue', val)
 })
 
-const snippetStore = useSnippetStore()
 const { generateSnippetPreviewHtml } = usePreview()
 const selectedFolders = ref<string[]>([])
-const previewFolder = ref<string>('')
-const previewHtml = ref('')
 const showTemplatePreview = ref(false)
 const templatePreviewSrcdoc = ref('')
 const previewAllLoading = ref(false)
@@ -145,6 +177,52 @@ function getSnippetName(folder: string): string {
   return snippet?.name || folder
 }
 
+// 获取缩略图URL
+function getThumbnailUrl(thumbnailPath: string): string {
+  if (!thumbnailPath) return ''
+  // 如果已经是完整URL，直接返回
+  if (thumbnailPath.startsWith('http://') || thumbnailPath.startsWith('https://')) {
+    return thumbnailPath
+  }
+  // 否则从public目录加载
+  return `/template/snippets/${thumbnailPath}`
+}
+
+// 多预览图相关辅助函数
+function hasPreviewImages(snippet: SnippetMeta): boolean {
+  return !!(snippet.previewImages && snippet.previewImages.length > 0)
+}
+
+function getFirstPreviewImage(snippet: SnippetMeta): string {
+  if (!snippet.previewImages || snippet.previewImages.length === 0) {
+    return getThumbnailUrl(snippet.thumbnail)
+  }
+  const firstImage = snippet.previewImages[0]
+  return firstImage.thumbnailUrl || firstImage.url
+}
+
+function getAllPreviewImages(snippet: SnippetMeta): string[] {
+  if (!snippet.previewImages || snippet.previewImages.length === 0) {
+    return snippet.thumbnail ? [getThumbnailUrl(snippet.thumbnail)] : []
+  }
+  return snippet.previewImages.map(img => img.url)
+}
+
+function getPreviewImagesCount(snippet: SnippetMeta): number {
+  if (snippet.previewImages && snippet.previewImages.length > 0) {
+    return snippet.previewImages.length
+  }
+  return snippet.thumbnail ? 1 : 0
+}
+
+// 打开图片预览（点击缩略图放大）
+function openImagePreview() {
+  // 这里不需要实现，el-image组件会自动处理预览
+  // 这个函数只是为了阻止事件冒泡，让el-image组件处理预览
+}
+
+
+
 function toggleSelection(folder: string) {
   const index = selectedFolders.value.indexOf(folder)
   if (index === -1) {
@@ -154,6 +232,29 @@ function toggleSelection(folder: string) {
   }
 }
 
+// 双击处理：如果没有选中任何片段，则选中并立即添加；如果双击的是唯一选中的片段，也立即添加
+function handleDoubleClick(folder: string) {
+  // 如果没有选中任何片段，先选中这个片段
+  if (selectedFolders.value.length === 0) {
+    selectedFolders.value.push(folder)
+  }
+  
+  // 如果双击的是唯一选中的片段，或者这个片段已经被选中，立即添加
+  if (selectedFolders.value.length === 1 && selectedFolders.value[0] === folder) {
+    onConfirmWithSingle(folder)
+  } else if (selectedFolders.value.includes(folder)) {
+    // 如果双击的片段已经被选中（在多选情况下），也立即添加
+    onConfirm()
+  }
+}
+
+// 确认添加单个片段
+function onConfirmWithSingle(folder: string) {
+  emit('add', [folder])
+  selectedFolders.value = []
+  visible.value = false
+}
+
 function removeSelection(folder: string) {
   const index = selectedFolders.value.indexOf(folder)
   if (index !== -1) {
@@ -161,26 +262,9 @@ function removeSelection(folder: string) {
   }
 }
 
-// hover 迷你预览：只渲染片段本身（保留原有逻辑）
-async function loadPreview(folder: string) {
-  if (previewFolder.value === folder) return
 
-  previewFolder.value = folder
-  const config = await snippetStore.loadSnippetDetail(folder)
-  const html = snippetStore.getSnippetHtml(folder)
-  if (config && html) {
-    const data = config.sampleData || {}
-    let compiled = html
-    try {
-      compiled = compileSnippetByType(html, data, config.formSchema.type)
-    } catch (e) {
-      console.error('Preview compile error:', e)
-    }
-    previewHtml.value = buildSnippetPreviewHtml(compiled)
-  }
-}
 
-// 单片段模板预览：使用模板 + 该片段的示例数据
+// 单片段模板预览：使用模板 + 该片段的示例数据 + 自定义CSS/JS
 async function openTemplatePreview(folder: string) {
   if (!props.templateFolder) return
   try {
@@ -188,6 +272,11 @@ async function openTemplatePreview(folder: string) {
     templatePreviewSrcdoc.value = await generateSnippetPreviewHtml({
       templateFolder: props.templateFolder,
       snippetFolders: [folder],
+      customCss: props.customCss || '',
+      customJs: props.customJs || '',
+      seoTitle: props.seoTitle || '',
+      seoDescription: props.seoDescription || '',
+      seoKeywords: props.seoKeywords || '',
     })
     showTemplatePreview.value = true
   } catch (e) {
@@ -197,7 +286,7 @@ async function openTemplatePreview(folder: string) {
   }
 }
 
-// 多选片段模板预览：使用模板 + 所有已选片段的示例数据
+// 多选片段模板预览：使用模板 + 所有已选片段的示例数据 + 自定义CSS/JS
 async function openSelectedPreview() {
   if (!props.templateFolder || selectedFolders.value.length === 0) return
   try {
@@ -205,6 +294,11 @@ async function openSelectedPreview() {
     templatePreviewSrcdoc.value = await generateSnippetPreviewHtml({
       templateFolder: props.templateFolder,
       snippetFolders: [...selectedFolders.value],
+      customCss: props.customCss || '',
+      customJs: props.customJs || '',
+      seoTitle: props.seoTitle || '',
+      seoDescription: props.seoDescription || '',
+      seoKeywords: props.seoKeywords || '',
     })
     showTemplatePreview.value = true
   } catch (e) {
@@ -218,8 +312,6 @@ function onConfirm() {
   if (selectedFolders.value.length > 0) {
     emit('add', [...selectedFolders.value])
     selectedFolders.value = []
-    previewFolder.value = ''
-    previewHtml.value = ''
     visible.value = false
   }
 }
@@ -228,8 +320,6 @@ function onConfirm() {
 watch(visible, (val) => {
   if (!val) {
     selectedFolders.value = []
-    previewFolder.value = ''
-    previewHtml.value = ''
     showTemplatePreview.value = false
     templatePreviewSrcdoc.value = ''
   }
@@ -326,6 +416,12 @@ watch(visible, (val) => {
   color: var(--text-secondary);
   margin-top: 6px;
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 4.5em;
 }
 
 .card-tags {
@@ -340,35 +436,116 @@ watch(visible, (val) => {
   height: 160px;
   background: var(--bg-primary);
   border-top: 1px solid var(--border-color);
+  overflow: hidden;
 }
 
-.preview-area {
+/* 缩略图预览样式 */
+.thumbnail-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.thumbnail-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  position: relative;
+}
+
+.preview-count {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  z-index: 2;
+}
+
+.thumbnail-image :deep(.thumbnail-el-image) {
   width: 100%;
   height: 100%;
 }
 
-.preview-iframe {
+.thumbnail-image :deep(.el-image) {
   width: 100%;
   height: 100%;
-  border: none;
 }
 
-.preview-placeholder {
+.thumbnail-image :deep(.el-image__inner) {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.thumbnail-preview:hover .thumbnail-image :deep(.el-image__inner) {
+  transform: scale(1.05);
+}
+
+.thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
   color: var(--text-muted);
-  gap: 6px;
+  gap: 8px;
+  background: var(--bg-secondary);
   font-size: 13px;
-  opacity: 0.6;
-  cursor: pointer;
 }
 
-.preview-placeholder:hover {
+.thumbnail-placeholder svg {
+  opacity: 0.5;
+}
+
+.thumbnail-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.thumbnail-preview:hover .thumbnail-overlay {
   opacity: 1;
-  background: rgba(56, 189, 248, 0.05);
+}
+
+.preview-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 20px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.preview-btn:hover {
+  background: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .card-preview-btn {
@@ -428,5 +605,38 @@ watch(visible, (val) => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.card-preview-actions {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.snippet-card:hover .card-preview-actions {
+  opacity: 1;
+}
+
+.template-preview-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.template-preview-btn:hover {
+  background: rgba(16, 185, 129, 0.85);
+  transform: scale(1.05);
 }
 </style>

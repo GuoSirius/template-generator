@@ -1,9 +1,17 @@
+export interface PreviewImage {
+  url: string
+  description?: string
+  thumbnailUrl?: string
+}
+
 export interface TemplateMeta {
   name: string
   version: string
   description: string
-  thumbnail: string
+  thumbnail: string  // 主缩略图，向后兼容
+  previewImages?: PreviewImage[]  // 多预览图支持
   folder: string
+  disabled?: boolean  // 是否禁用
 }
 
 export interface Placeholder {
