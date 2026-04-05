@@ -19,6 +19,8 @@ concurrency:
 env:
   NODE_VERSION: '24'
   VITE_BASE: '/template-generator/'
+  WRANGLER_VERSION: '3.110.0'
+  CLOUDFLARE_PROJECT_NAME: 'template-generator'
 
 jobs:
   lint-and-test:
@@ -71,6 +73,13 @@ jobs:
           cp public/_redirects dist/_redirects
           cp dist/index.html dist/404.html
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -94,38 +103,26 @@ jobs:
     environment:
       name: cloudflare-pages
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          version: 9
+          name: dist
+          path: dist
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build with base path
-        run: pnpm build
-        env:
-          VITE_BASE: ${{ env.VITE_BASE }}
-
-      - name: Add routing rules
-        run: |
-          cp public/_redirects dist/_redirects
-          cp dist/index.html dist/404.html
+      - name: Install wrangler
+        run: npm install -g wrangler@${{ env.WRANGLER_VERSION }}
 
       - name: Create Cloudflare Pages project if not exists
         run: |
-          npx wrangler pages project create template-generator --production-branch=production || true
+          wrangler pages project create ${{ env.CLOUDFLARE_PROJECT_NAME }} \
+            --production-branch=production \
+            --format=cloudflare-pages-rendering-config || true
 
       - name: Deploy to Cloudflare Pages
         run: |
-          cd dist
-          npx wrangler pages deploy . --project-name=template-generator --branch=production
+          wrangler pages deploy dist \
+            --project-name=${{ env.CLOUDFLARE_PROJECT_NAME }} \
+            --branch=production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
