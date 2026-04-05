@@ -103,8 +103,7 @@ jobs:
 
       - name: Setup Cloudflare Pages routing
         run: |
-          cp public/_routes.json dist/_routes.json
-          cp -r functions dist/functions
+          cp public/_redirects dist/_redirects
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

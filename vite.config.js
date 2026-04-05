@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
     // GitHub Pages 部署使用项目名称作为 base
-    base: env.VITE_BASE || '/template-generator/',
+    base: env.VITE_BASE || '/',
     plugins: [
       vue(),
       UnoCSS(),
