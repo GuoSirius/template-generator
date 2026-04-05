@@ -59,6 +59,9 @@ importers:
       '@eslint/js':
         specifier: ^9.16.0
         version: 9.39.4
+      '@types/file-saver':
+        specifier: ^2.0.7
+        version: 2.0.7
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -1398,6 +1401,12 @@ packages:
     resolution:
       {
         integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==,
+      }
+
+  '@types/file-saver@2.0.7':
+    resolution:
+      {
+        integrity: sha512-dNKVfHd/jk0SkR/exKGj2ggkB45MAkzvWCaqLUUgkyjITkGNzH8H+yUwr+BLJUBjZOe9w8X3wgmXhZDRg1ED6A==,
       }
 
   '@types/js-yaml@4.0.9':
@@ -4783,6 +4792,8 @@ snapshots:
   '@sxzz/popperjs-es@2.11.8': {}
 
   '@types/estree@1.0.8': {}
+
+  '@types/file-saver@2.0.7': {}
 
   '@types/js-yaml@4.0.9': {}
 

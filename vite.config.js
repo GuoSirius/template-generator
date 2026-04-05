@@ -6,14 +6,11 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    // GitHub Pages 部署使用项目名称作为 base
-    base: env.VITE_BASE || '/',
+    base: env.VITE_BASE || './',
     plugins: [
       vue(),
       UnoCSS(),
@@ -37,7 +34,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'es2022',
-      sourcemap: false,
+      sourcemap: true,
     },
   }
 })

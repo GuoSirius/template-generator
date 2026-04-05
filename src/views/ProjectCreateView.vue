@@ -735,7 +735,9 @@ async function onDownloadHtml() {
       properties: s.properties,
     })),
   }
-  const renderedHtml = await generatePreviewHtml(currentProjectData)
+  const renderedHtml = await generatePreviewHtml(
+    currentProjectData as Parameters<typeof generatePreviewHtml>[0],
+  )
 
   // 打包下载 HTML 文件（格式化版 + 压缩版）
   const safeProjectName = nameForm.value.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')
@@ -762,7 +764,9 @@ async function onSaveProject() {
       properties: s.properties,
     })),
   }
-  const renderedHtml = await generatePreviewHtml(currentProjectData)
+  const renderedHtml = await generatePreviewHtml(
+    currentProjectData as Parameters<typeof generatePreviewHtml>[0],
+  )
 
   // 3. 保存项目
   projectStore.completeProject()
