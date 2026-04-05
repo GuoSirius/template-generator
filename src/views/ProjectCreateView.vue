@@ -24,121 +24,121 @@
 
     <!-- 主要内容区域 - 可滚动 -->
     <div class="main-content">
-
       <!-- Step 1: 模板选择 -->
       <div v-if="currentStep === 1" class="step-content">
+        <div class="step1-layout">
+          <!-- 左侧：模板选择 + SEO -->
+          <div class="step1-left">
+            <div class="section-card">
+              <h3 class="section-title">项目名称 <span class="required-mark">*</span></h3>
+              <el-form
+                :model="nameForm"
+                :rules="nameRules"
+                ref="nameFormRef"
+                class="name-form-inline"
+              >
+                <el-form-item prop="name">
+                  <el-input
+                    v-model="nameForm.name"
+                    placeholder="请输入项目名称"
+                    size="default"
+                    clearable
+                    @change="onNameChange"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-form>
+            </div>
+            <div class="section-card">
+              <h3 class="section-title">选择模板 <span class="required-mark">*</span></h3>
+              <TemplateDropdown v-model="templateFolder" :templates="validTemplates" />
+              <TemplateInfo
+                :template="templateStore.currentTemplate"
+                :placeholders="placeholders"
+                class="template-info"
+              />
+            </div>
+            <el-collapse class="seo-collapse">
+              <el-collapse-item title="SEO 信息" name="seo">
+                <SeoForm v-model="seoInfo" />
+              </el-collapse-item>
+            </el-collapse>
+          </div>
+          <!-- 右侧：模板预览 -->
+          <div class="step1-right">
+            <!-- 强制追踪 templateStore.currentHtml 的响应式变化 -->
+            <PreviewIframe
+              v-if="currentStep === 1 && templateStore.currentHtml"
+              :srcdoc="forceTrackCurrentHtml()"
+              class="step-preview"
+            >
+              <template #toolbar>
+                <span class="toolbar-label">模板预览</span>
+              </template>
+            </PreviewIframe>
+            <div v-else class="preview-placeholder">
+              <FileCode2 :size="48" />
+              <p v-if="!templateFolder">选择模板后查看预览</p>
+              <p v-else>正在加载模板...</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div class="step1-layout">
-        <!-- 左侧：模板选择 + SEO -->
-        <div class="step1-left">
-          <div class="section-card">
-            <h3 class="section-title">项目名称 <span class="required-mark">*</span></h3>
-            <el-form :model="nameForm" :rules="nameRules" ref="nameFormRef" class="name-form-inline">
-              <el-form-item prop="name">
-                <el-input
-                  v-model="nameForm.name"
-                  placeholder="请输入项目名称"
-                  size="default"
-                  clearable
-                  @change="onNameChange"
-                  style="width: 100%;"
+      <!-- Step 2: 片段配置 -->
+      <div v-if="currentStep === 2" class="step-content">
+        <div class="step2-layout">
+          <!-- 第一列：片段列表 -->
+          <div class="col-snippets">
+            <h3 class="col-title">片段列表</h3>
+            <div class="snippet-list-wrapper">
+              <SnippetList
+                :instances="snippetInstances"
+                :snippets="snippetStore.snippets"
+                :selected-id="selectedSnippetId"
+                @select="onSelectSnippet"
+                @add="showAddDialog = true"
+                @copy="onCopySnippet"
+                @delete="onDeleteSnippet"
+                @toggle="onToggleSnippet"
+                @reorder="onReorderSnippets"
+                @preview="onPreviewSnippet"
+              />
+            </div>
+            <button class="add-snippet-btn" @click="showAddDialog = true">
+              <Plus :size="18" />
+              <span>添加片段</span>
+            </button>
+          </div>
+
+          <!-- 第二列：片段配置 -->
+          <div class="col-config">
+            <el-tabs v-model="configTab" @tab-change="onTabChange">
+              <el-tab-pane label="属性设置" name="props">
+                <SnippetConfig
+                  :snippet-config="selectedSnippetConfig"
+                  :snippet-meta="selectedSnippetMeta"
+                  :properties="selectedProperties"
+                  :placeholder-names="placeholderNames"
+                  @update:properties="onUpdateProperties"
                 />
-              </el-form-item>
-            </el-form>
-          </div>
-          <div class="section-card">
-            <h3 class="section-title">选择模板 <span class="required-mark">*</span></h3>
-            <TemplateDropdown
-              v-model="templateFolder"
-              :templates="validTemplates"
-            />
-            <TemplateInfo
-              :template="templateStore.currentTemplate"
-              :placeholders="placeholders"
-              class="template-info"
-            />
-          </div>
-          <el-collapse class="seo-collapse">
-            <el-collapse-item title="SEO 信息" name="seo">
-              <SeoForm v-model="seoInfo" />
-            </el-collapse-item>
-          </el-collapse>
-        </div>
-        <!-- 右侧：模板预览 -->
-        <div class="step1-right">
-          <!-- 强制追踪 templateStore.currentHtml 的响应式变化 -->
-          <PreviewIframe
-            v-if="currentStep === 1 && templateStore.currentHtml"
-            :srcdoc="forceTrackCurrentHtml()"
-            class="step-preview"
-          >
-            <template #toolbar>
-              <span class="toolbar-label">模板预览</span>
-            </template>
-          </PreviewIframe>
-          <div v-else class="preview-placeholder">
-            <FileCode2 :size="48" />
-            <p v-if="!templateFolder">选择模板后查看预览</p>
-            <p v-else>正在加载模板...</p>
+              </el-tab-pane>
+              <el-tab-pane label="数据录入" name="data">
+                <DynamicForm
+                  v-if="selectedSnippetConfig"
+                  :schema="selectedSnippetConfig.formSchema"
+                  :model-value="selectedSnippetData"
+                  :sample-data="selectedSnippetConfig?.sampleData"
+                  @update:model-value="onUpdateSnippetData"
+                />
+                <div v-else class="config-empty-data">
+                  <p>请先选择一个片段</p>
+                </div>
+              </el-tab-pane>
+            </el-tabs>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Step 2: 片段配置 -->
-    <div v-if="currentStep === 2" class="step-content">
-      <div class="step2-layout">
-        <!-- 第一列：片段列表 -->
-        <div class="col-snippets">
-          <h3 class="col-title">片段列表</h3>
-          <div class="snippet-list-wrapper">
-            <SnippetList
-              :instances="snippetInstances"
-              :snippets="snippetStore.snippets"
-              :selected-id="selectedSnippetId"
-              @select="onSelectSnippet"
-              @add="showAddDialog = true"
-              @copy="onCopySnippet"
-              @delete="onDeleteSnippet"
-              @toggle="onToggleSnippet"
-              @reorder="onReorderSnippets"
-              @preview="onPreviewSnippet"
-            />
-          </div>
-          <button class="add-snippet-btn" @click="showAddDialog = true">
-            <Plus :size="18" />
-            <span>添加片段</span>
-          </button>
-        </div>
-
-        <!-- 第二列：片段配置 -->
-        <div class="col-config">
-          <el-tabs v-model="configTab" @tab-change="onTabChange">
-            <el-tab-pane label="属性设置" name="props">
-              <SnippetConfig
-                :snippet-config="selectedSnippetConfig"
-                :snippet-meta="selectedSnippetMeta"
-                :properties="selectedProperties"
-                :placeholder-names="placeholderNames"
-                @update:properties="onUpdateProperties"
-              />
-            </el-tab-pane>
-            <el-tab-pane label="数据录入" name="data">
-              <DynamicForm
-                v-if="selectedSnippetConfig"
-                :schema="selectedSnippetConfig.formSchema"
-                :model-value="selectedSnippetData"
-                :sample-data="selectedSnippetConfig?.sampleData"
-                @update:model-value="onUpdateSnippetData"
-              />
-              <div v-else class="config-empty-data">
-                <p>请先选择一个片段</p>
-              </div>
-            </el-tab-pane>
-          </el-tabs>
-        </div>
-      </div>
-    </div>
     </div>
 
     <!-- 固定底部操作栏 -->
@@ -229,8 +229,15 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
-import { Paintbrush, Eye, ChevronRight, ChevronLeft,
-  Save, FileCode2, Code, Plus,
+import {
+  Paintbrush,
+  Eye,
+  ChevronRight,
+  ChevronLeft,
+  Save,
+  FileCode2,
+  Code,
+  Plus,
 } from 'lucide-vue-next'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/project'
@@ -256,7 +263,12 @@ const route = useRoute()
 const projectStore = useProjectStore()
 const templateStore = useTemplateStore()
 const snippetStore = useSnippetStore()
-const { fullPreviewSrcdoc, ensureSnippetResources, setLocalCustomCode, generateSnippetPreviewHtml } = usePreview()
+const {
+  fullPreviewSrcdoc,
+  ensureSnippetResources,
+  setLocalCustomCode,
+  generateSnippetPreviewHtml,
+} = usePreview()
 
 // State
 const currentStep = ref(1)
@@ -297,7 +309,7 @@ function checkDataChanged() {
     seo: seoInfo.value,
     customCss: localCustomCss.value,
     customJs: localCustomJs.value,
-    snippets: snippetInstances.value.map(s => ({
+    snippets: snippetInstances.value.map((s) => ({
       id: s.id,
       snippetId: s.snippetId,
       enabled: s.enabled,
@@ -312,15 +324,15 @@ function checkDataChanged() {
 const project = computed(() => projectStore.currentProject)
 const snippetInstances = computed(() => project.value?.snippetInstances || [])
 const placeholders = computed(() => templateStore.currentConfig?.placeholders || [])
-const placeholderNames = computed(() => placeholders.value.map(p => p.name))
-const existingSnippetIds = computed(() => snippetInstances.value.map(s => s.snippetId))
+const placeholderNames = computed(() => placeholders.value.map((p) => p.name))
+const existingSnippetIds = computed(() => snippetInstances.value.map((s) => s.snippetId))
 const isSeoFilled = computed(() => {
   return !!(seoInfo.value.title || seoInfo.value.keywords || seoInfo.value.description)
 })
 
 // 只返回有效的模板（排除 disabled: true 的模板）
 const validTemplates = computed(() => {
-  return templateStore.templates.filter(t => !t.disabled)
+  return templateStore.templates.filter((t) => !t.disabled)
 })
 
 const selectedSnippetConfig = computed<SnippetConfigType | null>(() => {
@@ -335,7 +347,7 @@ const selectedSnippetMeta = computed<SnippetMeta | null>(() => {
 
 const selectedInstance = computed(() => {
   if (!selectedSnippetId.value) return null
-  return snippetInstances.value.find(s => s.id === selectedSnippetId.value) || null
+  return snippetInstances.value.find((s) => s.id === selectedSnippetId.value) || null
 })
 
 const selectedProperties = computed<{
@@ -350,10 +362,10 @@ const selectedProperties = computed<{
           top: { value: 0, unit: 'px' as const },
           right: { value: 0, unit: 'px' as const },
           bottom: { value: 0, unit: 'px' as const },
-          left: { value: 0, unit: 'px' as const }
+          left: { value: 0, unit: 'px' as const },
         },
         placeholder: '',
-        className: ''
+        className: '',
       }
     }
     return selectedInstance.value.properties
@@ -381,13 +393,13 @@ function forceTrackCurrentHtml(): string {
 // 使用 watch 显式追踪 currentTemplate 和 currentHtml 的变化
 watch(
   () => [templateStore.currentTemplate, templateStore.currentHtml, templateStore.currentConfig],
-  () =>   {
+  () => {
     const html = templateStore.currentHtml
     if (html) {
       void fullPreviewSrcdoc.value
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // 在 init 完成后强制触发一次追踪，确保响应式正确建立
@@ -397,7 +409,6 @@ onMounted(async () => {
   // 不 await，让 init 在后台执行，同时让 Vue 正常渲染
   // init() 内部已经 await 了所有必要的异步操作
 })
-
 
 // Watchers
 // 监听模板选择变化：确保模板加载完成后更新视图
@@ -417,12 +428,18 @@ watch(templateFolder, async (folder, oldFolder) => {
   }
 
   // 确保选择的是有效的模板
-  const meta = templateStore.templates.find(t => t.folder === folder)
+  const meta = templateStore.templates.find((t) => t.folder === folder)
   if (!meta) {
     return
   }
 
   await templateStore.selectTemplate(folder)
+
+  // 选择模板后，自动填充 SEO 默认值（如果用户尚未填写）
+  await nextTick()
+  if (templateStore.currentConfig?.seo && !isSeoFilled.value) {
+    seoInfo.value = { ...templateStore.currentConfig.seo }
+  }
 })
 
 watch([localCustomCss, localCustomJs], () => {
@@ -438,23 +455,31 @@ watch([localCustomCss, localCustomJs], () => {
   }
 })
 
-watch(seoInfo, (val) => {
-  if (project.value && isSeoFilled.value) {
-    try {
-      projectStore.updateSeo(val)
-    } catch {
-      // 忽略 SEO 更新错误
+watch(
+  seoInfo,
+  (val) => {
+    if (project.value && isSeoFilled.value) {
+      try {
+        projectStore.updateSeo(val)
+      } catch {
+        // 忽略 SEO 更新错误
+      }
     }
-  }
-}, { deep: true })
+  },
+  { deep: true },
+)
 
-watch(nameForm, (val) => {
-  projectNameValid.value = val.name.trim().length >= 2
-  // 如果 SEO 标题为空，则和项目名称保持一致
-  if (val.name && !seoInfo.value.title) {
-    seoInfo.value.title = val.name
-  }
-}, { deep: true })
+watch(
+  nameForm,
+  (val) => {
+    projectNameValid.value = val.name.trim().length >= 2
+    // 如果 SEO 标题为空，则和项目名称保持一致
+    if (val.name && !seoInfo.value.title) {
+      seoInfo.value.title = val.name
+    }
+  },
+  { deep: true },
+)
 
 // Methods
 async function goToStep1() {
@@ -475,8 +500,8 @@ async function goToStep1() {
 
   // 静默预加载片段资源（后台填充 htmlCache，previewSrcdoc 会自动热更新）
   if (snippetInstances.value.length > 0) {
-    const snippetIds = [...new Set(snippetInstances.value.map(inst => inst.snippetId))]
-    snippetIds.forEach(id => snippetStore.loadSnippetDetail(id).catch(() => {}))
+    const snippetIds = [...new Set(snippetInstances.value.map((inst) => inst.snippetId))]
+    snippetIds.forEach((id) => snippetStore.loadSnippetDetail(id).catch(() => {}))
   }
 }
 
@@ -533,7 +558,7 @@ async function onSelectSnippet(id: string) {
   const savedTab = project.value?.snippetTabs[id]
   configTab.value = savedTab || 'data'
   // Load snippet detail if not cached
-  const instance = snippetInstances.value.find(s => s.id === id)
+  const instance = snippetInstances.value.find((s) => s.id === id)
   if (instance) {
     await snippetStore.loadSnippetDetail(instance.snippetId)
   }
@@ -560,24 +585,27 @@ function onAddSnippet(folders: string | string[]) {
 }
 
 function onCopySnippet(id: string) {
-  const snippet = snippetInstances.value.find(s => s.id === id)
-  const snippetName = snippetStore.snippets.find(s => s.folder === snippet?.snippetId)?.name || '片段'
-  
+  const snippet = snippetInstances.value.find((s) => s.id === id)
+  const snippetName =
+    snippetStore.snippets.find((s) => s.folder === snippet?.snippetId)?.name || '片段'
+
   ElMessageBox.confirm(`确定要复制「${snippetName}」吗？`, '确认复制', {
     confirmButtonText: '复制',
     cancelButtonText: '取消',
     type: 'info',
-  }).then(() => {
-    const copied = projectStore.duplicateSnippetInstance(id)
-    if (copied) {
-      // 选中新复制的片段
-      selectedSnippetId.value = copied.id
-      // 切换到数据 tab
-      configTab.value = 'data'
-    }
-  }).catch(() => {
-    // 用户取消
   })
+    .then(() => {
+      const copied = projectStore.duplicateSnippetInstance(id)
+      if (copied) {
+        // 选中新复制的片段
+        selectedSnippetId.value = copied.id
+        // 切换到数据 tab
+        configTab.value = 'data'
+      }
+    })
+    .catch(() => {
+      // 用户取消
+    })
 }
 
 function onDeleteSnippet(id: string) {
@@ -585,13 +613,15 @@ function onDeleteSnippet(id: string) {
     confirmButtonText: '删除',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(() => {
-    projectStore.removeSnippetInstance(id)
-    if (selectedSnippetId.value === id) {
-      selectedSnippetId.value = null
-    }
-    ElMessage.success('已删除')
-  }).catch(() => {})
+  })
+    .then(() => {
+      projectStore.removeSnippetInstance(id)
+      if (selectedSnippetId.value === id) {
+        selectedSnippetId.value = null
+      }
+      ElMessage.success('已删除')
+    })
+    .catch(() => {})
 }
 
 function onToggleSnippet(id: string, enabled: boolean) {
@@ -613,16 +643,16 @@ function onUpdateSnippetData(data: Record<string, unknown> | Record<string, unkn
 }
 
 async function onPreviewSnippet(id: string) {
-  const instance = snippetInstances.value.find(s => s.id === id)
+  const instance = snippetInstances.value.find((s) => s.id === id)
   if (!instance) return
-  
+
   try {
     // 确保模板已加载
     if (!templateFolder.value) {
       ElMessage.warning('请先选择模板')
       return
     }
-    
+
     // 使用 generateSnippetPreviewHtml 生成完整的预览HTML
     // 包含：模板 + 当前片段 + 自定义CSS/JS + SEO
     const previewHtml = await generateSnippetPreviewHtml({
@@ -632,9 +662,9 @@ async function onPreviewSnippet(id: string) {
       customJs: localCustomJs.value,
       seoTitle: seoInfo.value.title,
       seoDescription: seoInfo.value.description,
-      seoKeywords: seoInfo.value.keywords
+      seoKeywords: seoInfo.value.keywords,
     })
-    
+
     snippetPreviewHtml.value = previewHtml
     showSnippetPreview.value = true
   } catch {
@@ -660,15 +690,21 @@ function onSaveJs(js: string) {
 
 function openQuickPreview() {
   // 确保所有片段资源已加载，然后打开预览
-  ensureSnippetResources().then(() => {
-    showQuickPreview.value = true
-  }).catch(() => {
-    showQuickPreview.value = true
-  })
+  ensureSnippetResources()
+    .then(() => {
+      showQuickPreview.value = true
+    })
+    .catch(() => {
+      showQuickPreview.value = true
+    })
 }
 
 function onTabChange(tabName: string | number) {
-  if (selectedSnippetId.value && typeof tabName === 'string' && (tabName === 'props' || tabName === 'data')) {
+  if (
+    selectedSnippetId.value &&
+    typeof tabName === 'string' &&
+    (tabName === 'props' || tabName === 'data')
+  ) {
     projectStore.setSnippetTab(selectedSnippetId.value, tabName as 'props' | 'data')
   }
 }
@@ -677,7 +713,7 @@ async function onSaveProject() {
   if (!project.value) return
   projectStore.completeProject()
   await projectStore.saveCurrentProject()
-  
+
   // 更新初始状态，防止保存后仍提示离开确认
   initialState.value = JSON.stringify({
     name: nameForm.value.name,
@@ -685,7 +721,7 @@ async function onSaveProject() {
     seo: seoInfo.value,
     customCss: localCustomCss.value,
     customJs: localCustomJs.value,
-    snippets: snippetInstances.value.map(s => ({
+    snippets: snippetInstances.value.map((s) => ({
       id: s.id,
       snippetId: s.snippetId,
       enabled: s.enabled,
@@ -693,7 +729,7 @@ async function onSaveProject() {
       properties: s.properties,
     })),
   })
-  
+
   showSaveConfirm.value = true
 }
 
@@ -780,10 +816,7 @@ async function init() {
   }
 
   // Load templates and snippets
-  await Promise.all([
-    templateStore.loadTemplates(),
-    snippetStore.loadSnippets(),
-  ])
+  await Promise.all([templateStore.loadTemplates(), snippetStore.loadSnippets()])
 
   // 等待模板列表渲染完成，确保 validTemplates 计算属性就绪
   await nextTick()
@@ -793,6 +826,8 @@ async function init() {
     // 无项目：自动选择第一个模板（watch 会处理加载）
     const firstTemplate = validTemplates.value[0]
     templateFolder.value = firstTemplate.folder
+    // 等待 watch 中的 selectTemplate 完成
+    await nextTick()
   }
 
   // 填充 SEO 默认值
@@ -806,9 +841,9 @@ async function init() {
   // Load all snippet configs for existing instances (并行加载，避免时序问题)
   // 注意：不再等待完成才显示预览，fullPreviewSrcdoc 会立即渲染模板+已有片段
   if (snippetInstances.value.length > 0) {
-    const snippetIds = [...new Set(snippetInstances.value.map(inst => inst.snippetId))]
+    const snippetIds = [...new Set(snippetInstances.value.map((inst) => inst.snippetId))]
     // 静默后台加载，不阻塞 init 返回
-    snippetIds.forEach(id => snippetStore.loadSnippetDetail(id).catch(() => {}))
+    snippetIds.forEach((id) => snippetStore.loadSnippetDetail(id).catch(() => {}))
   }
 
   // 初始化选中的片段: 优先使用上次选中的,否则选中第一个
@@ -827,7 +862,7 @@ async function init() {
     seo: seoInfo.value,
     customCss: localCustomCss.value,
     customJs: localCustomJs.value,
-    snippets: snippetInstances.value.map(s => ({
+    snippets: snippetInstances.value.map((s) => ({
       id: s.id,
       snippetId: s.snippetId,
       enabled: s.enabled,
@@ -842,15 +877,11 @@ onMounted(() => {
   onBeforeRouteLeave(async () => {
     if (checkDataChanged()) {
       try {
-        await ElMessageBox.confirm(
-          '您有未保存的更改，确定要离开吗？',
-          '离开确认',
-          {
-            confirmButtonText: '离开',
-            cancelButtonText: '取消',
-            type: 'warning',
-          }
-        )
+        await ElMessageBox.confirm('您有未保存的更改，确定要离开吗？', '离开确认', {
+          confirmButtonText: '离开',
+          cancelButtonText: '取消',
+          type: 'warning',
+        })
         return true
       } catch {
         return false
@@ -922,11 +953,21 @@ onMounted(() => {
   filter: brightness(1.15);
 }
 
-.btn-js { background: #8B5CF6; }
-.btn-css { background: #F59E0B; }
-.btn-preview { background: #10B981; }
-.btn-secondary { background: #475569; }
-.btn-apply { background: #10B981; }
+.btn-js {
+  background: #8b5cf6;
+}
+.btn-css {
+  background: #f59e0b;
+}
+.btn-preview {
+  background: #10b981;
+}
+.btn-secondary {
+  background: #475569;
+}
+.btn-apply {
+  background: #10b981;
+}
 
 .footer-actions {
   display: flex;
@@ -1024,7 +1065,7 @@ onMounted(() => {
 }
 
 .required-mark {
-  color: #F56C6C;
+  color: #f56c6c;
   margin-left: 4px;
 }
 
@@ -1114,7 +1155,7 @@ onMounted(() => {
   margin-top: 12px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #38BDF8, #0284C7);
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -1215,7 +1256,7 @@ onMounted(() => {
 }
 
 .expand-preview-btn:hover {
-  background: #64748B;
+  background: #64748b;
   width: 48px;
 }
 
@@ -1301,11 +1342,11 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #38BDF8, #0284C7);
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
 }
 
 .btn-secondary {
-  background: #3B82F6;
+  background: #3b82f6;
 }
 
 .toolbar-label {
