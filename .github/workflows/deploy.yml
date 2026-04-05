@@ -18,7 +18,6 @@ concurrency:
 
 env:
   NODE_VERSION: '24'
-  VITE_BASE: '/template-generator/'
   WRANGLER_VERSION: '3.110.0'
   CLOUDFLARE_PROJECT_NAME: 'template-generator'
 
@@ -45,7 +44,8 @@ jobs:
 
       - run: pnpm test
 
-  build:
+  # GitHub Pages 构建 (使用 /template-generator/ base)
+  build-github:
     needs: lint-and-test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -63,29 +63,57 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build with base path
+      - name: Build for GitHub Pages
         run: pnpm build
         env:
-          VITE_BASE: ${{ env.VITE_BASE }}
+          VITE_BASE: '/template-generator/'
 
-      - name: Add routing rules
+      - name: Add routing rules for GitHub Pages
         run: |
           cp public/_redirects dist/_redirects
           cp dist/index.html dist/404.html
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist
-          retention-days: 1
 
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
+  # Cloudflare Pages 构建 (使用 / base)
+  build-cloudflare:
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build for Cloudflare Pages
+        run: pnpm build
+        env:
+          VITE_BASE: '/'
+
+      - name: Add routing rules for Cloudflare Pages
+        run: |
+          cp public/_redirects dist/_redirects
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-cloudflare
+          path: dist
+          retention-days: 1
+
   deploy-github-pages:
-    needs: build
+    needs: build-github
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
@@ -96,7 +124,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   deploy-cloudflare:
-    needs: build
+    needs: build-cloudflare
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     name: Deploy to Cloudflare Pages
@@ -106,7 +134,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: dist-cloudflare
           path: dist
 
       - name: Install wrangler
@@ -115,8 +143,7 @@ jobs:
       - name: Create Cloudflare Pages project if not exists
         run: |
           wrangler pages project create ${{ env.CLOUDFLARE_PROJECT_NAME }} \
-            --production-branch=production \
-            --format=cloudflare-pages-rendering-config || true
+            --production-branch=production || true
 
       - name: Deploy to Cloudflare Pages
         run: |
