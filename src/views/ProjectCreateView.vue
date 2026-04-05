@@ -733,10 +733,11 @@ async function onDownloadHtml() {
       enabled: s.enabled,
       data: s.data,
       properties: s.properties,
+      sortOrder: s.sortOrder,
     })),
   }
   const renderedHtml = await generatePreviewHtml(
-    currentProjectData as Parameters<typeof generatePreviewHtml>[0],
+    currentProjectData as unknown as Parameters<typeof generatePreviewHtml>[0],
   )
 
   // 打包下载 HTML 文件（格式化版 + 压缩版）
@@ -762,10 +763,11 @@ async function onSaveProject() {
       enabled: s.enabled,
       data: s.data,
       properties: s.properties,
+      sortOrder: s.sortOrder,
     })),
   }
   const renderedHtml = await generatePreviewHtml(
-    currentProjectData as Parameters<typeof generatePreviewHtml>[0],
+    currentProjectData as unknown as Parameters<typeof generatePreviewHtml>[0],
   )
 
   // 3. 保存项目
