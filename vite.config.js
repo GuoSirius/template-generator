@@ -12,8 +12,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    // 确保静态资源路径正确
-    base: env.VITE_BASE || '/',
+    // GitHub Pages 部署使用项目名称作为 base
+    base: env.VITE_BASE || '/template-generator/',
     plugins: [
       vue(),
       UnoCSS(),

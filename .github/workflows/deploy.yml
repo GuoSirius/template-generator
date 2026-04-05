@@ -18,6 +18,7 @@ concurrency:
 
 env:
   NODE_VERSION: '24'
+  VITE_BASE: '/template-generator'
 
 jobs:
   lint-and-test:
@@ -60,11 +61,17 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm build
+      - name: Build with base path
+        run: pnpm build
+        env:
+          VITE_BASE: ${{ env.VITE_BASE }}
 
-      - name: Add _redirects for Cloudflare Pages SPA routing
+      - name: Add routing rules
         run: |
-          echo "/* /index.html 200" > dist/_redirects
+          # Add _redirects for Cloudflare Pages SPA routing
+          cp public/_redirects dist/_redirects
+          # Add 404.html for GitHub Pages SPA fallback
+          cp dist/index.html dist/404.html
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -76,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}/template-generator
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
@@ -103,11 +110,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm build
+      - name: Build with base path
+        run: pnpm build
+        env:
+          VITE_BASE: ${{ env.VITE_BASE }}
 
-      - name: Add _redirects for Cloudflare Pages SPA routing
+      - name: Add routing rules
         run: |
-          echo "/* /index.html 200" > dist/_redirects
+          cp public/_redirects dist/_redirects
+          cp dist/index.html dist/404.html
+
+      - name: Create Cloudflare Pages project if not exists
+        run: |
+          # Try to create the project, ignore if already exists
+          npx wrangler pages project create template-generator --production-branch=production 2>&1 || true
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
