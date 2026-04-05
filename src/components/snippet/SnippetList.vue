@@ -35,7 +35,7 @@
               :model-value="element.enabled"
               size="small"
               @click.stop
-              @update:model-value="toggleEnabled(element.id, $event)"
+              @update:model-value="toggleEnabled(element.id, $event as boolean)"
             />
             <el-dropdown trigger="hover" @command="(cmd: string) => handleCommand(cmd, element.id)">
               <button class="more-btn" @click.stop>
@@ -91,7 +91,7 @@ const localInstances = computed({
 })
 
 function getSnippetName(snippetId: string): string {
-  const found = props.snippets.find(s => s.folder === snippetId)
+  const found = props.snippets.find((s) => s.folder === snippetId)
   return found?.name || snippetId
 }
 
@@ -247,7 +247,7 @@ function onDragEnd() {
 
 .preview-btn:hover {
   background: var(--bg-tertiary);
-  color: #10B981;
+  color: #10b981;
 }
 
 .more-btn {

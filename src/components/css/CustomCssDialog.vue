@@ -39,20 +39,13 @@
             <Eye :size="16" />
             应用并预览
           </el-button>
-          <el-button type="primary" class="save-btn" @click="onSave">
-            保存
-          </el-button>
+          <el-button type="primary" class="save-btn" @click="onSave"> 保存 </el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- 预览对话框 -->
-    <PreviewDialog
-      v-model="showPreview"
-      :srcdoc="previewSrcdocValue"
-      title="CSS 预览效果"
-      :height="isFullscreen ? 'calc(100vh - 120px)' : '70vh'"
-    />
+    <PreviewDialog v-model="showPreview" :srcdoc="previewSrcdocValue" title="CSS 预览效果" />
   </div>
 </template>
 
@@ -81,7 +74,7 @@ const emit = defineEmits<{
 
 const dialogVisible = computed({
   get: () => props.visible ?? false,
-  set: (val: boolean) => emit('update:visible', val)
+  set: (val: boolean) => emit('update:visible', val),
 })
 
 const { previewSrcdoc } = usePreview()
@@ -96,15 +89,19 @@ const cssValidation = computed(() => validateCss(String(cssCode.value)))
 // 计算预览 HTML：使用 previewSrcdoc 方法，传入编辑中的 CSS
 // previewSrcdoc 内部会处理模板 HTML 的 body 提取和占位符替换
 const previewSrcdocValue = previewSrcdoc({
-  css: cssCode.value,  // 直接访问响应式数据
+  css: cssCode.value, // 直接访问响应式数据
   templateHtml: props.templateHtml,
   seoTitle: props.seoTitle,
 })
 
-watch(() => props.modelValue, (val) => {
-  cssCode.value = val
-  originalCode.value = val
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  (val) => {
+    cssCode.value = val
+    originalCode.value = val
+  },
+  { immediate: true },
+)
 
 function onInput() {
   emit('update:modelValue', cssCode.value)
@@ -135,15 +132,11 @@ function hasChanges(): boolean {
 async function handleCancel() {
   if (hasChanges()) {
     try {
-      await ElMessageBox.confirm(
-        '您有未保存的更改，确定要放弃吗？',
-        '确认取消',
-        {
-          confirmButtonText: '放弃更改',
-          cancelButtonText: '继续编辑',
-          type: 'warning',
-        }
-      )
+      await ElMessageBox.confirm('您有未保存的更改，确定要放弃吗？', '确认取消', {
+        confirmButtonText: '放弃更改',
+        cancelButtonText: '继续编辑',
+        type: 'warning',
+      })
       dialogVisible.value = false
     } catch {
       // 用户取消，留在弹框
@@ -204,11 +197,11 @@ function onSave() {
 }
 
 .validation-info.valid {
-  color: #22C55E;
+  color: #22c55e;
 }
 
 .validation-info.invalid {
-  color: #EF4444;
+  color: #ef4444;
 }
 
 .editor-wrapper {
@@ -251,12 +244,12 @@ function onSave() {
 }
 
 .save-btn {
-  background: linear-gradient(135deg, #38BDF8, #0284C7);
-  border-color: #0284C7;
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  border-color: #0284c7;
 }
 
 .preview-btn {
-  background: #10B981;
-  border-color: #10B981;
+  background: #10b981;
+  border-color: #10b981;
 }
 </style>

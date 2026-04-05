@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
-  plugins: [vue()],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  plugins: [vue() as any],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

@@ -6,6 +6,20 @@ export interface PreviewImage {
 
 export type FieldValue = string | number | boolean
 
+/** 间距值 */
+export interface SpacingValue {
+  value: number
+  unit: 'px' | '%' | 'rem'
+}
+
+/** 间距配置 */
+export interface Spacing {
+  top: SpacingValue
+  right: SpacingValue
+  bottom: SpacingValue
+  left: SpacingValue
+}
+
 /** 根据 field.type 映射的默认值类型 */
 export type FieldDefaultValueMap = {
   text: string
@@ -20,8 +34,8 @@ export interface SnippetMeta {
   name: string
   version: string
   description: string
-  thumbnail: string  // 主缩略图，向后兼容
-  previewImages?: PreviewImage[]  // 多预览图支持
+  thumbnail: string // 主缩略图，向后兼容
+  previewImages?: PreviewImage[] // 多预览图支持
   folder: string
   tags: string[]
 }
@@ -68,7 +82,7 @@ export type SnippetData = Record<string, unknown> | Record<string, unknown>[]
 export interface SnippetConfig {
   className: string
   defaultPlaceholder: string
-  defaults: Record<string, FieldValue> & { spacing?: import('./project').Spacing }
+  defaults: Record<string, FieldValue> & { spacing?: Spacing }
   formSchema: FormSchema
   sampleData: SnippetData
 }

@@ -1,12 +1,7 @@
 import type { SnippetData, Spacing } from './snippet'
 
-// Re-export Spacing for external consumers (stores, composables)
-export type { Spacing } from './snippet'
-
-export interface SpacingValue {
-  value: number
-  unit: 'px' | '%' | 'rem'
-}
+// Re-export Spacing and SnippetData for external consumers
+export type { Spacing, SnippetData } from './snippet'
 
 export interface SnippetProperties {
   placeholder: string
@@ -65,7 +60,10 @@ export function createDefaultSeo(): SeoInfo {
   }
 }
 
-export function createSnippetProperties(snippetFolder: string, defaultPlaceholder: string): SnippetProperties {
+export function createSnippetProperties(
+  snippetFolder: string,
+  defaultPlaceholder: string,
+): SnippetProperties {
   return {
     placeholder: defaultPlaceholder ? `placeholder:${defaultPlaceholder}` : '',
     className: snippetFolder,

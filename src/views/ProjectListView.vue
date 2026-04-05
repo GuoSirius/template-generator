@@ -16,10 +16,20 @@
           <span>创建模板</span>
         </button>
         <div class="view-switcher">
-          <button class="view-btn" :class="{ active: viewMode === 'card' }" @click="viewMode = 'card'" title="卡片模式">
+          <button
+            class="view-btn"
+            :class="{ active: viewMode === 'card' }"
+            @click="viewMode = 'card'"
+            title="卡片模式"
+          >
             <LayoutGrid :size="18" />
           </button>
-          <button class="view-btn" :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'" title="表格模式">
+          <button
+            class="view-btn"
+            :class="{ active: viewMode === 'table' }"
+            @click="viewMode = 'table'"
+            title="表格模式"
+          >
             <List :size="18" />
           </button>
         </div>
@@ -43,14 +53,23 @@
     <div v-if="viewMode === 'card' && sortedProjects.length > 0" class="card-grid">
       <div class="card-select-all">
         <el-checkbox
-          :model-value="selectedProjects.length === sortedProjects.length && sortedProjects.length > 0"
-          :indeterminate="selectedProjects.length > 0 && selectedProjects.length < sortedProjects.length"
+          :model-value="
+            selectedProjects.length === sortedProjects.length && sortedProjects.length > 0
+          "
+          :indeterminate="
+            selectedProjects.length > 0 && selectedProjects.length < sortedProjects.length
+          "
           @change="toggleSelectAll"
         >
           全选 ({{ selectedProjects.length }}/{{ sortedProjects.length }})
         </el-checkbox>
       </div>
-      <div v-for="project in sortedProjects" :key="project.id" class="project-card" :class="{ selected: selectedProjects.includes(project.id) }">
+      <div
+        v-for="project in sortedProjects"
+        :key="project.id"
+        class="project-card"
+        :class="{ selected: selectedProjects.includes(project.id) }"
+      >
         <div class="card-checkbox">
           <el-checkbox
             :model-value="selectedProjects.includes(project.id)"
@@ -79,13 +98,27 @@
             </div>
           </div>
           <div class="card-actions">
-            <button class="action-icon-btn btn-preview" title="预览" @click="previewProject(project)">
+            <button
+              class="action-icon-btn btn-preview"
+              title="预览"
+              @click="previewProject(project)"
+            >
               <Eye :size="16" />
             </button>
-            <button v-if="project.status === 'completed'" class="action-icon-btn btn-edit" title="编辑" @click="editProject(project)">
+            <button
+              v-if="project.status === 'completed'"
+              class="action-icon-btn btn-edit"
+              title="编辑"
+              @click="editProject(project)"
+            >
               <Edit3 :size="16" />
             </button>
-            <button v-if="project.status === 'draft'" class="action-icon-btn btn-resume" title="去完成" @click="resumeProject(project)">
+            <button
+              v-if="project.status === 'draft'"
+              class="action-icon-btn btn-resume"
+              title="去完成"
+              @click="resumeProject(project)"
+            >
               <Play :size="16" />
             </button>
             <button class="action-icon-btn btn-copy" title="复制" @click="copyProject(project)">
@@ -115,13 +148,17 @@
           <template #default="{ row }">
             <div class="table-name-cell">
               <span class="table-name">{{ row.name }}</span>
-              <span class="status-badge" :class="row.status">{{ row.status === 'completed' ? '已完成' : '制作中' }}</span>
+              <span class="status-badge" :class="row.status">{{
+                row.status === 'completed' ? '已完成' : '制作中'
+              }}</span>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <span class="status-badge" :class="row.status">{{ row.status === 'completed' ? '已完成' : '制作中' }}</span>
+            <span class="status-badge" :class="row.status">{{
+              row.status === 'completed' ? '已完成' : '制作中'
+            }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="templateId" label="模板" width="120" />
@@ -137,10 +174,20 @@
               <button class="action-icon-btn btn-preview" title="预览" @click="previewProject(row)">
                 <Eye :size="16" />
               </button>
-              <button v-if="row.status === 'completed'" class="action-icon-btn btn-edit" title="编辑" @click="editProject(row)">
+              <button
+                v-if="row.status === 'completed'"
+                class="action-icon-btn btn-edit"
+                title="编辑"
+                @click="editProject(row)"
+              >
                 <Edit3 :size="16" />
               </button>
-              <button v-if="row.status === 'draft'" class="action-icon-btn btn-resume" title="去完成" @click="resumeProject(row)">
+              <button
+                v-if="row.status === 'draft'"
+                class="action-icon-btn btn-resume"
+                title="去完成"
+                @click="resumeProject(row)"
+              >
                 <Play :size="16" />
               </button>
               <button class="action-icon-btn btn-copy" title="复制" @click="copyProject(row)">
@@ -157,7 +204,12 @@
 
     <!-- 预览对话框 -->
     <el-dialog v-model="showPreview" title="页面预览" width="80%" top="5vh" destroy-on-close>
-      <PreviewIframe v-if="previewHtml" :srcdoc="previewHtml" :show-toolbar="false" style="height: 70vh;" />
+      <PreviewIframe
+        v-if="previewHtml"
+        :srcdoc="previewHtml"
+        :show-toolbar="false"
+        style="height: 70vh"
+      />
     </el-dialog>
   </div>
 </template>
@@ -166,8 +218,16 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  LayoutGrid, List, PlusCircle, FileCode2, FileText,
-  Eye, Edit3, Play, Copy, Trash2,
+  LayoutGrid,
+  List,
+  PlusCircle,
+  FileCode2,
+  FileText,
+  Eye,
+  Edit3,
+  Play,
+  Copy,
+  Trash2,
 } from 'lucide-vue-next'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/project'
@@ -187,18 +247,21 @@ const selectedProjects = ref<string[]>([])
 const tableRef = ref<InstanceType<typeof import('element-plus').ElTable> | null>(null)
 
 // 监听视图切换，同步选中状态到表格
-watch(() => viewMode.value, (newMode) => {
-  if (newMode === 'table' && selectedProjects.value.length > 0) {
-    // 使用 requestAnimationFrame 确保 DOM 渲染完成
-    requestAnimationFrame(() => {
-      if (!tableRef.value) return
-      const rows = sortedProjects.value.filter(p => selectedProjects.value.includes(p.id))
-      rows.forEach(row => {
-        tableRef.value?.toggleRowSelection(row, true)
+watch(
+  () => viewMode.value,
+  (newMode) => {
+    if (newMode === 'table' && selectedProjects.value.length > 0) {
+      // 使用 requestAnimationFrame 确保 DOM 渲染完成
+      requestAnimationFrame(() => {
+        if (!tableRef.value) return
+        const rows = sortedProjects.value.filter((p) => selectedProjects.value.includes(p.id))
+        rows.forEach((row) => {
+          tableRef.value?.toggleRowSelection(row, true)
+        })
       })
-    })
-  }
-})
+    }
+  },
+)
 
 const toggleSelect = (id: string) => {
   const idx = selectedProjects.value.indexOf(id)
@@ -209,27 +272,35 @@ const toggleSelect = (id: string) => {
   }
 }
 
+const toggleSelectAll = () => {
+  if (selectedProjects.value.length === sortedProjects.value.length) {
+    selectedProjects.value = []
+  } else {
+    selectedProjects.value = sortedProjects.value.map((p) => p.id)
+  }
+}
+
 // 记录切换到表格模式时的选中状态，用于检测取消选中
 let tableModePreviousSelected: string[] = []
 
 const handleSelectionChange = (rows: Project[]) => {
-  const currentIds = rows.map(r => r.id)
+  const currentIds = rows.map((r) => r.id)
 
   // 如果之前有记录表格模式的选中状态，说明是从卡片切换过来的
   if (tableModePreviousSelected.length > 0) {
     // 找出被取消选中的项目（之前在选中列表中，现在不在 currentIds 中）
     const deselected = tableModePreviousSelected.filter(
-      id => !currentIds.includes(id) && selectedProjects.value.includes(id)
+      (id) => !currentIds.includes(id) && selectedProjects.value.includes(id),
     )
     // 移除被取消选中的
-    deselected.forEach(id => {
+    deselected.forEach((id) => {
       const idx = selectedProjects.value.indexOf(id)
       if (idx > -1) selectedProjects.value.splice(idx, 1)
     })
   }
 
   // 合并新增选中的项目
-  currentIds.forEach(id => {
+  currentIds.forEach((id) => {
     if (!selectedProjects.value.includes(id)) {
       selectedProjects.value.push(id)
     }
@@ -248,12 +319,14 @@ const confirmBatchDelete = () => {
       confirmButtonText: '删除',
       cancelButtonText: '取消',
       type: 'warning',
-    }
-  ).then(() => {
-    selectedProjects.value.forEach(id => projectStore.deleteProject(id))
-    selectedProjects.value = []
-    ElMessage.success('批量删除成功')
-  }).catch(() => {})
+    },
+  )
+    .then(() => {
+      selectedProjects.value.forEach((id) => projectStore.deleteProject(id))
+      selectedProjects.value = []
+      ElMessage.success('批量删除成功')
+    })
+    .catch(() => {})
 }
 
 const sortedProjects = computed(() => projectStore.sortedProjects)
@@ -266,8 +339,10 @@ const tableHeaderStyle = () => ({
 
 const formatDate = (timestamp: number) => {
   return new Date(timestamp).toLocaleString('zh-CN', {
-    month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   })
 }
 
@@ -285,15 +360,11 @@ const resumeProject = (project: Project) => {
 
 const copyProject = async (project: Project) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要复制「${project.name}」吗？`,
-      '确认复制',
-      {
-        confirmButtonText: '复制',
-        cancelButtonText: '取消',
-        type: 'info',
-      }
-    )
+    await ElMessageBox.confirm(`确定要复制「${project.name}」吗？`, '确认复制', {
+      confirmButtonText: '复制',
+      cancelButtonText: '取消',
+      type: 'info',
+    })
     const copy = await projectStore.duplicateProject(project.id)
     if (copy) {
       router.push(`/create/${copy.id}`)
@@ -308,10 +379,12 @@ const confirmDelete = (project: Project) => {
     confirmButtonText: '删除',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(() => {
-    projectStore.deleteProject(project.id)
-    ElMessage.success('删除成功')
-  }).catch(() => {})
+  })
+    .then(() => {
+      projectStore.deleteProject(project.id)
+      ElMessage.success('删除成功')
+    })
+    .catch(() => {})
 }
 
 const previewProject = async (project: Project) => {
@@ -362,7 +435,7 @@ onMounted(async () => {
   padding: 8px 16px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #EF4444, #DC2626);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -421,7 +494,7 @@ onMounted(async () => {
   padding: 8px 18px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #38BDF8, #0284C7);
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -466,8 +539,13 @@ onMounted(async () => {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
-  50% { box-shadow: 0 0 20px 6px rgba(56, 189, 248, 0.2); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 6px rgba(56, 189, 248, 0.2);
+  }
 }
 
 /* 卡片模式 */
@@ -590,42 +668,42 @@ onMounted(async () => {
 
 .status-badge.completed {
   background: rgba(34, 197, 94, 0.15);
-  color: #22C55E;
+  color: #22c55e;
 }
 
 .status-badge.draft {
   background: rgba(245, 158, 11, 0.15);
-  color: #F59E0B;
+  color: #f59e0b;
 }
 
-        .card-meta {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          margin-bottom: 12px;
-        }
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
 
-        .time-info {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 11px;
-          justify-content: flex-start;
-        }
+.time-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  justify-content: flex-start;
+}
 
-        .time-label {
-          color: var(--text-muted);
-          font-weight: 500;
-        }
+.time-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
 
-        .time-value {
-          color: var(--text-secondary);
-        }
+.time-value {
+  color: var(--text-secondary);
+}
 
-        .time-separator {
-          color: var(--text-muted);
-          margin: 0 2px;
-        }
+.time-separator {
+  color: var(--text-muted);
+  margin: 0 2px;
+}
 
 .card-actions {
   display: flex;
@@ -676,9 +754,19 @@ onMounted(async () => {
   transform: scale(1.08);
 }
 
-.btn-preview { background: #22C55E; }
-.btn-edit { background: #38BDF8; }
-.btn-resume { background: #0EA5E9; }
-.btn-copy { background: #8B5CF6; }
-.btn-delete { background: #EF4444; }
+.btn-preview {
+  background: #22c55e;
+}
+.btn-edit {
+  background: #38bdf8;
+}
+.btn-resume {
+  background: #0ea5e9;
+}
+.btn-copy {
+  background: #8b5cf6;
+}
+.btn-delete {
+  background: #ef4444;
+}
 </style>

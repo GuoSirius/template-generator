@@ -29,24 +29,16 @@
             v-model="objectData[field.key]"
             :min="0"
             controls-position="right"
-            style="width: 100%;"
+            style="width: 100%"
           />
           <el-select
             v-else-if="field.type === 'select'"
             v-model="objectData[field.key]"
-            style="width: 100%;"
+            style="width: 100%"
           >
-            <el-option
-              v-for="opt in field.options"
-              :key="opt"
-              :label="opt"
-              :value="opt"
-            />
+            <el-option v-for="opt in field.options" :key="opt" :label="opt" :value="opt" />
           </el-select>
-          <el-color-picker
-            v-else-if="field.type === 'color'"
-            v-model="objectData[field.key]"
-          />
+          <el-color-picker v-else-if="field.type === 'color'" v-model="objectData[field.key]" />
           <el-input
             v-else-if="field.type === 'image'"
             :model-value="objectData[field.key]"
@@ -60,11 +52,7 @@
     <!-- Array type: list of items -->
     <template v-if="schema.type === 'array'">
       <div class="array-list">
-        <div
-          v-for="(item, index) in arrayList"
-          :key="index"
-          class="array-item"
-        >
+        <div v-for="(item, index) in arrayList" :key="index" class="array-item">
           <div class="array-item-header">
             <span class="array-item-index">条目 {{ index + 1 }}</span>
             <div class="array-item-actions">
@@ -102,24 +90,16 @@
                 v-model="item[field.key]"
                 :min="0"
                 controls-position="right"
-                style="width: 100%;"
+                style="width: 100%"
               />
               <el-select
                 v-else-if="field.type === 'select'"
                 v-model="item[field.key]"
-                style="width: 100%;"
+                style="width: 100%"
               >
-                <el-option
-                  v-for="opt in field.options"
-                  :key="opt"
-                  :label="opt"
-                  :value="opt"
-                />
+                <el-option v-for="opt in field.options" :key="opt" :label="opt" :value="opt" />
               </el-select>
-              <el-color-picker
-                v-else-if="field.type === 'color'"
-                v-model="item[field.key]"
-              />
+              <el-color-picker v-else-if="field.type === 'color'" v-model="item[field.key]" />
               <el-input
                 v-else-if="field.type === 'image'"
                 :model-value="item[field.key]"
@@ -153,14 +133,18 @@
                 <el-input
                   v-if="field.type === 'text'"
                   :model-value="objectData[group.name]?.[field.key]"
-                  @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
+                  @update:model-value="
+                    objectData[group.name][field.key] = handleInput(field, $event)
+                  "
                   :placeholder="field.placeholder || ''"
                   :maxlength="200"
                 />
                 <el-input
                   v-else-if="field.type === 'textarea'"
                   :model-value="objectData[group.name]?.[field.key]"
-                  @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
+                  @update:model-value="
+                    objectData[group.name][field.key] = handleInput(field, $event)
+                  "
                   type="textarea"
                   :rows="3"
                   :placeholder="field.placeholder || ''"
@@ -170,19 +154,14 @@
                   v-model="objectData[group.name][field.key]"
                   :min="0"
                   controls-position="right"
-                  style="width: 100%;"
+                  style="width: 100%"
                 />
                 <el-select
                   v-else-if="field.type === 'select'"
                   v-model="objectData[group.name][field.key]"
-                  style="width: 100%;"
+                  style="width: 100%"
                 >
-                  <el-option
-                    v-for="opt in field.options"
-                    :key="opt"
-                    :label="opt"
-                    :value="opt"
-                  />
+                  <el-option v-for="opt in field.options" :key="opt" :label="opt" :value="opt" />
                 </el-select>
                 <el-color-picker
                   v-else-if="field.type === 'color'"
@@ -191,7 +170,9 @@
                 <el-input
                   v-else-if="field.type === 'image'"
                   :model-value="objectData[group.name]?.[field.key]"
-                  @update:model-value="objectData[group.name][field.key] = handleInput(field, $event)"
+                  @update:model-value="
+                    objectData[group.name][field.key] = handleInput(field, $event)
+                  "
                   :placeholder="field.placeholder || '图片 URL'"
                 />
               </el-form-item>
@@ -203,17 +184,27 @@
             <h4 class="group-title">{{ group.label }}</h4>
             <div class="array-list">
               <div
-                v-for="(item, index) in (objectData[group.name] || [])"
+                v-for="(item, index) in objectData[group.name] || []"
                 :key="index"
                 class="array-item"
               >
                 <div class="array-item-header">
-                  <span class="array-item-index">{{ group.itemLabel || '条目' }} {{ index + 1 }}</span>
+                  <span class="array-item-index"
+                    >{{ group.itemLabel || '条目' }} {{ index + 1 }}</span
+                  >
                   <div class="array-item-actions">
-                    <button class="icon-btn btn-copy" title="复制" @click="copyListItem(group.name, index, group.fields)">
+                    <button
+                      class="icon-btn btn-copy"
+                      title="复制"
+                      @click="copyListItem(group.name, index, group.fields)"
+                    >
                       <Copy :size="14" />
                     </button>
-                    <button class="icon-btn btn-delete" title="删除" @click="removeListItem(group.name, index)">
+                    <button
+                      class="icon-btn btn-delete"
+                      title="删除"
+                      @click="removeListItem(group.name, index)"
+                    >
                       <Trash2 :size="14" />
                     </button>
                   </div>
@@ -244,12 +235,12 @@
                       v-model="item[field.key]"
                       :min="0"
                       controls-position="right"
-                      style="width: 100%;"
+                      style="width: 100%"
                     />
                     <el-select
                       v-else-if="field.type === 'select'"
                       v-model="item[field.key]"
-                      style="width: 100%;"
+                      style="width: 100%"
                     >
                       <el-option
                         v-for="opt in field.options"
@@ -258,10 +249,7 @@
                         :value="opt"
                       />
                     </el-select>
-                    <el-color-picker
-                      v-else-if="field.type === 'color'"
-                      v-model="item[field.key]"
-                    />
+                    <el-color-picker v-else-if="field.type === 'color'" v-model="item[field.key]" />
                     <el-input
                       v-else-if="field.type === 'image'"
                       :model-value="item[field.key]"
@@ -288,7 +276,13 @@ import { reactive, watch, nextTick } from 'vue'
 import { Copy, Trash2, Plus } from 'lucide-vue-next'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormSchema, FieldDef } from '@/types'
-import { getDefaultFormData, createEmptyFormData, isItemCompleted, isListItemCompleted, getFormFields } from '@/engines/form-engine'
+import {
+  getDefaultFormData,
+  createEmptyFormData,
+  isItemCompleted,
+  isListItemCompleted,
+  getFormFields,
+} from '@/engines/form-engine'
 
 const props = defineProps<{
   schema: FormSchema
@@ -300,8 +294,10 @@ const emit = defineEmits<{
   'update:modelValue': [value: Record<string, unknown> | Record<string, unknown>[]]
 }>()
 
-const objectData = reactive<Record<string, unknown>>({})
-const arrayList = reactive<Record<string, unknown>[]>([])
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const objectData = reactive<Record<string, any>>({})
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const arrayList = reactive<Record<string, any>[]>([])
 let isInternalUpdate = false
 
 // 获取 formGroups 用于 objectWithList
@@ -323,7 +319,8 @@ function getFieldsForSchema(): FieldDef[] {
 }
 
 // 处理字段值的空格
-function processTrim(data: Record<string, unknown>, fields: FieldDef[]): Record<string, unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function processTrim(data: Record<string, any>, fields: FieldDef[]): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const field of fields) {
     const value = data[field.key]
@@ -345,7 +342,7 @@ function processTrim(data: Record<string, unknown>, fields: FieldDef[]): Record<
 }
 
 // 实时处理输入框的空格
-function handleInput(field: FieldDef, value: import('@/types').FieldValue) {
+function handleInput(field: FieldDef, value: import('@/types').FieldValue): unknown {
   if (field.trim && typeof value === 'string') {
     if (field.trim === true) {
       return value.trim()
@@ -440,7 +437,7 @@ function initFromValue() {
       Object.assign(objectData, props.sampleData)
     } else {
       const defaults = getDefaultFormData(props.schema)
-      Object.keys(objectData).forEach(k => delete objectData[k])
+      Object.keys(objectData).forEach((k) => delete objectData[k])
       Object.assign(objectData, defaults)
     }
   } else {
@@ -459,27 +456,32 @@ function initFromValue() {
 initFromValue()
 watch(() => props.modelValue, initFromValue, { deep: true })
 // 监听 schema 变化，当切换不同片段时重新初始化数据
-watch(() => props.schema, () => {
-  // 清空现有数据
-  if (props.schema.type === 'object' || props.schema.type === 'objectWithList') {
-    Object.keys(objectData).forEach(key => delete objectData[key])
-  } else if (props.schema.type === 'array') {
-    arrayList.splice(0, arrayList.length)
-  }
-  // 重新初始化
-  initFromValue()
-}, { deep: true })
+watch(
+  () => props.schema,
+  () => {
+    // 清空现有数据
+    if (props.schema.type === 'object' || props.schema.type === 'objectWithList') {
+      Object.keys(objectData).forEach((key) => delete objectData[key])
+    } else if (props.schema.type === 'array') {
+      arrayList.splice(0, arrayList.length)
+    }
+    // 重新初始化
+    initFromValue()
+  },
+  { deep: true },
+)
 
 // 获取所有字段
 const allFields = getFieldsForSchema()
 
 // 包装 emit，处理空格
-function emitWithTrim(val: Record<string, unknown> | Record<string, unknown>[]) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function emitWithTrim(val: Record<string, any>) {
   // 深拷贝
   let processed: Record<string, unknown> | Record<string, unknown>[]
   if (Array.isArray(val)) {
     // 数组类型：处理每一项
-    processed = val.map(item => processTrim(item, allFields))
+    processed = val.map((item) => processTrim(item, allFields))
   } else {
     processed = processTrim(val, allFields)
   }
@@ -492,17 +494,25 @@ function emitWithTrim(val: Record<string, unknown> | Record<string, unknown>[]) 
 
 // Object/ObjectWithList: watch and emit
 if (props.schema.type === 'object' || props.schema.type === 'objectWithList') {
-  watch(objectData, (val) => {
-    emitWithTrim(val)
-  }, { deep: true })
+  watch(
+    objectData,
+    (val) => {
+      emitWithTrim(val)
+    },
+    { deep: true },
+  )
 }
 
 // Array: watch and emit
-watch(arrayList, (val) => {
-  if (props.schema.type === 'array') {
-    emitWithTrim(val)
-  }
-}, { deep: true })
+watch(
+  arrayList,
+  (val) => {
+    if (props.schema.type === 'array') {
+      emitWithTrim(val)
+    }
+  },
+  { deep: true },
+)
 
 function addItem() {
   // 检查最后一项是否已填完
@@ -519,15 +529,17 @@ function addItem() {
 function removeItem(index: number) {
   const item = arrayList[index]
   // 检查是否有数据
-  const hasData = Object.values(item).some(v => v !== '' && v !== null && v !== undefined)
+  const hasData = Object.values(item).some((v) => v !== '' && v !== null && v !== undefined)
   if (hasData) {
     ElMessageBox.confirm('该数据项存在内容，确认要删除吗？', '确认删除', {
       confirmButtonText: '确认',
       cancelButtonText: '取消',
       type: 'warning',
-    }).then(() => {
-      arrayList.splice(index, 1)
-    }).catch(() => {})
+    })
+      .then(() => {
+        arrayList.splice(index, 1)
+      })
+      .catch(() => {})
   } else {
     arrayList.splice(index, 1)
   }
@@ -568,15 +580,17 @@ function removeListItem(groupName: string, index: number) {
   const listData = objectData[groupName]
   const item = listData[index]
   // 检查是否有数据
-  const hasData = Object.values(item).some(v => v !== '' && v !== null && v !== undefined)
+  const hasData = Object.values(item).some((v) => v !== '' && v !== null && v !== undefined)
   if (hasData) {
     ElMessageBox.confirm('该数据项存在内容，确认要删除吗？', '确认删除', {
       confirmButtonText: '确认',
       cancelButtonText: '取消',
       type: 'warning',
-    }).then(() => {
-      objectData[groupName].splice(index, 1)
-    }).catch(() => {})
+    })
+      .then(() => {
+        objectData[groupName].splice(index, 1)
+      })
+      .catch(() => {})
   } else {
     objectData[groupName].splice(index, 1)
   }
@@ -657,7 +671,7 @@ function copyListItem(groupName: string, index: number, fields: FieldDef[]) {
 }
 
 .btn-delete:hover {
-  color: #EF4444;
+  color: #ef4444;
 }
 
 .add-item-btn {

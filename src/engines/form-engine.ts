@@ -21,7 +21,9 @@ export function getFormGroups(schema: FormSchema): FieldGroup[] | undefined {
   return undefined
 }
 
-export function getDefaultFormData(schema: FormSchema): Record<string, unknown> {
+export function getDefaultFormData(
+  schema: FormSchema,
+): Record<string, unknown> | Record<string, unknown>[] {
   // objectWithList 类型需要为每个 group 生成默认值
   if (schema.type === 'objectWithList' && schema.groups) {
     const data: Record<string, unknown> = {}
@@ -68,7 +70,8 @@ export function getDefaultFormData(schema: FormSchema): Record<string, unknown> 
 }
 
 export function getDefaultFormDataList(schema: FormSchema): Record<string, unknown>[] {
-  return [getDefaultFormData(schema)]
+  const result = getDefaultFormData(schema)
+  return Array.isArray(result) ? result : [result]
 }
 
 export function createEmptyFormData(schema: FormSchema): Record<string, unknown> {
@@ -139,16 +142,16 @@ export function validateFormData(schema: FormSchema, data: Record<string, unknow
 // 检查数组项是否已填完（必填项不为空，或至少有一项有数据）
 export function isItemCompleted(schema: FormSchema, data: Record<string, unknown>): boolean {
   const fields = getFormFields(schema)
-  
+
   // 检查必填项
-  const requiredFields = fields.filter(f => f.required)
+  const requiredFields = fields.filter((f) => f.required)
   for (const field of requiredFields) {
     const value = data[field.key]
     if (value === undefined || value === null || value === '') {
       return false
     }
   }
-  
+
   // 如果没有必填项，检查是否至少有一项有数据
   if (requiredFields.length === 0) {
     for (const field of fields) {
@@ -159,21 +162,21 @@ export function isItemCompleted(schema: FormSchema, data: Record<string, unknown
     }
     return false
   }
-  
+
   return true
 }
 
 // 检查 objectWithList 中指定 group 的数组项是否已完成
 export function isListItemCompleted(fields: FieldDef[], data: Record<string, unknown>): boolean {
   // 检查必填项
-  const requiredFields = fields.filter(f => f.required)
+  const requiredFields = fields.filter((f) => f.required)
   for (const field of requiredFields) {
     const value = data[field.key]
     if (value === undefined || value === null || value === '') {
       return false
     }
   }
-  
+
   // 如果没有必填项，检查是否至少有一项有数据
   if (requiredFields.length === 0) {
     for (const field of fields) {
@@ -184,6 +187,6 @@ export function isListItemCompleted(fields: FieldDef[], data: Record<string, unk
     }
     return false
   }
-  
+
   return true
 }
