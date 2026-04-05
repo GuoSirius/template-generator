@@ -62,7 +62,7 @@ jobs:
 
       - run: pnpm build
 
-      - name: Add Cloudflare _redirects for SPA routing
+      - name: Add _redirects for Cloudflare Pages SPA routing
         run: |
           echo "/* /index.html 200" > dist/_redirects
 
@@ -82,10 +82,12 @@ jobs:
         uses: actions/deploy-pages@v4
 
   deploy-cloudflare:
-    needs: lint-and-test
+    needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     name: Deploy to Cloudflare Pages
+    environment:
+      name: cloudflare-pages
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,12 +105,13 @@ jobs:
 
       - run: pnpm build
 
+      - name: Add _redirects for Cloudflare Pages SPA routing
+        run: |
+          echo "/* /index.html 200" > dist/_redirects
+
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: template-generator
-          directory: dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          wranglerVersion: '3'
+          command: pages deploy dist --project-name=template-generator --branch=production
