@@ -101,9 +101,8 @@ jobs:
         env:
           VITE_BASE: '/'
 
-      - name: Add routing rules for Cloudflare Pages
+      - name: Setup Cloudflare Pages Functions
         run: |
-          cp public/_redirects dist/_redirects
           cp -r functions dist/functions
 
       - name: Upload build artifacts
