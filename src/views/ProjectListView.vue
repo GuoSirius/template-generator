@@ -319,7 +319,6 @@ const previewProject = async (project: Project) => {
     previewHtml.value = await generatePreviewHtml(project)
     showPreview.value = true
   } catch (e) {
-    console.error('Preview failed:', e)
     ElMessage.error('预览失败')
   }
 }

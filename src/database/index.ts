@@ -35,7 +35,6 @@ export async function saveProject(project: Project): Promise<void> {
     const cloned = JSON.parse(JSON.stringify(project))
     await db.projects.put(cloned)
   } catch (error) {
-    console.error('Failed to save project:', error)
     throw error
   }
 }

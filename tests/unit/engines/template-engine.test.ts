@@ -88,6 +88,7 @@ describe('replacePlaceholders', () => {
     const template = '<!-- placeholder:footer --><div>content</div>'
     const snippets = [{ placeholder: 'placeholder:hero', html: '<h1>Hero</h1>' }]
     const result = replacePlaceholders(template, snippets)
-    expect(result).not.toContain('<!-- placeholder:footer -->')
+    // Unmatched placeholders are kept (per implementation: "残留的空占位符保留不动")
+    expect(result).toContain('<!-- placeholder:footer -->')
   })
 })

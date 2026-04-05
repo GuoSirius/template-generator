@@ -3,9 +3,9 @@
  * @param templateHtml 完整的模板HTML（包含<!DOCTYPE html>等）
  * @param bodyContent 替换占位符后的body内容
  * @param customCss 自定义CSS
- * @param seoTitle SEO标题
- * @param seoDescription SEO描述
- * @param seoKeywords SEO关键词
+ * @param seoTitle SEO标题（模板使用lodash模板语法处理）
+ * @param seoDescription SEO描述（模板使用lodash模板语法处理）
+ * @param seoKeywords SEO关键词（模板使用lodash模板语法处理）
  * @param customJs 自定义JavaScript
  */
 export function buildPreviewHtml(
@@ -19,35 +19,14 @@ export function buildPreviewHtml(
 ): string {
   let html = templateHtml
   
-  // 1. 替换SEO信息
-  if (seoTitle) {
-    html = html.replace(/<title>.*?<\/title>/i, `<title>${escapeHtml(seoTitle)}</title>`)
-  }
+  // 模板HTML使用lodash模板语法（如 <%= title %>），无需正则替换SEO标签
   
-  if (seoDescription) {
-    if (html.includes('name="description"')) {
-      html = html.replace(/<meta\s+name="description"\s+content=".*?"\s*\/?>/i, `<meta name="description" content="${escapeHtml(seoDescription)}">`)
-    } else {
-      // 在head中添加description meta标签
-      html = html.replace(/<\/head>/i, `  <meta name="description" content="${escapeHtml(seoDescription)}">\n</head>`)
-    }
-  }
-  
-  if (seoKeywords) {
-    if (html.includes('name="keywords"')) {
-      html = html.replace(/<meta\s+name="keywords"\s+content=".*?"\s*\/?>/i, `<meta name="keywords" content="${escapeHtml(seoKeywords)}">`)
-    } else {
-      // 在head中添加keywords meta标签
-      html = html.replace(/<\/head>/i, `  <meta name="keywords" content="${escapeHtml(seoKeywords)}">\n</head>`)
-    }
-  }
-  
-  // 2. 添加自定义CSS到head末尾（确保在所有其他style之后）
+  // 1. 添加自定义CSS到head末尾（确保在所有其他style之后）
   if (customCss) {
     html = html.replace(/<\/head>/i, `\n  <style>\n    ${customCss}\n  </style>\n</head>`)
   }
   
-  // 3. 替换body内容
+  // 2. 替换body内容
   if (html.includes('<body')) {
     // 提取body开始标签和结束标签之间的内容
     html = html.replace(/<body[^>]*>[\s\S]*<\/body>/i, (match) => {
@@ -58,7 +37,7 @@ export function buildPreviewHtml(
     })
   }
   
-  // 4. 添加自定义JS到body末尾
+  // 3. 添加自定义JS到body末尾
   if (customJs) {
     html = html.replace(/<\/body>/i, `  <script>${customJs}</' + 'script>\n</body>`)
   }

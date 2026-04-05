@@ -20,7 +20,7 @@ export const useSnippetStore = defineStore('snippet', () => {
       const registry = await getSnippetsRegistry()
       snippets.value = registry.snippets || []
     } catch (e) {
-      console.error('Failed to load snippets:', e)
+      // 忽略片段加载错误
     } finally {
       loading.value = false
     }
@@ -31,27 +31,41 @@ export const useSnippetStore = defineStore('snippet', () => {
   }
 
   const loadSnippetDetail = async (folder: string): Promise<SnippetConfig | null> => {
+    // 已缓存但 HTML 为空或不完整，单独加载 HTML
+    const existingHtml = htmlCache.value.get(folder)
+    if (configs.value.has(folder) && (!existingHtml || existingHtml.length < 10)) {
+      try {
+        const html = await getSnippetHtml(folder)
+        if (html && html.length > 0) {
+          htmlCache.value.set(folder, html)
+        }
+      } catch (e) {
+        // 忽略 HTML 加载错误
+      }
+      return configs.value.get(folder)!
+    }
     if (configs.value.has(folder)) {
       return configs.value.get(folder)!
     }
     loading.value = true
     try {
-      const [config, html] = await Promise.all([
-        getSnippetConfig(folder),
-        getSnippetHtml(folder),
-      ])
+      // 分别加载 config 和 html，避免一个失败影响另一个
+      const configPromise = getSnippetConfig(folder)
+      const htmlPromise = getSnippetHtml(folder).catch(() => '')
+      const [config, html] = await Promise.all([configPromise, htmlPromise])
       configs.value.set(folder, config)
-      htmlCache.value.set(folder, html)
+      if (html && html.length > 0) {
+        htmlCache.value.set(folder, html)
+      }
       return config
     } catch (e) {
-      console.error('Failed to load snippet detail:', e)
       return null
     } finally {
       loading.value = false
     }
   }
 
-  const getSnippetHtml = (folder: string): string => {
+  const getCachedSnippetHtml = (folder: string): string => {
     return htmlCache.value.get(folder) || ''
   }
 
@@ -63,6 +77,6 @@ export const useSnippetStore = defineStore('snippet', () => {
     loadSnippets,
     getSnippetMeta,
     loadSnippetDetail,
-    getSnippetHtml,
+    getSnippetHtml: getCachedSnippetHtml,
   }
 })

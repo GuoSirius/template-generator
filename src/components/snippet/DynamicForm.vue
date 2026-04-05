@@ -345,7 +345,7 @@ function processTrim(data: Record<string, any>, fields: FieldDef[]): Record<stri
 }
 
 // 实时处理输入框的空格
-function handleInput(field: FieldDef, value: any) {
+function handleInput(field: FieldDef, value: import('@/types').FieldValue) {
   if (field.trim && typeof value === 'string') {
     if (field.trim === true) {
       return value.trim()

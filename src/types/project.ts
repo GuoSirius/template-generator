@@ -1,13 +1,11 @@
+import type { SnippetData, Spacing } from './snippet'
+
+// Re-export Spacing for external consumers (stores, composables)
+export type { Spacing } from './snippet'
+
 export interface SpacingValue {
   value: number
   unit: 'px' | '%' | 'rem'
-}
-
-export interface Spacing {
-  top: SpacingValue
-  right: SpacingValue
-  bottom: SpacingValue
-  left: SpacingValue
 }
 
 export interface SnippetProperties {
@@ -21,7 +19,7 @@ export interface SnippetInstance {
   snippetId: string
   enabled: boolean
   properties: SnippetProperties
-  data: Record<string, any> | Record<string, any>[]
+  data: SnippetData
   sortOrder: number
 }
 

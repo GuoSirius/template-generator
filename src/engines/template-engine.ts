@@ -1,24 +1,37 @@
 import template from 'lodash-es/template'
+import type { SnippetData, FieldValue } from '@/types'
 
-export function compileTemplate(htmlTemplate: string, data: Record<string, any>): string {
+/**
+ * 使用 lodash 模板语法渲染 HTML。
+ * 支持 <%= title %> 等表达式。
+ */
+export function renderLodashTemplate(html: string, data: Record<string, FieldValue | string>): string {
+  try {
+    const compiled = template(html)
+    return compiled(data)
+  } catch (e) {
+    // 模板语法不存在，使用原始 HTML
+    return html
+  }
+}
+
+export function compileTemplate(htmlTemplate: string, data: SnippetData): string {
   try {
     const compiled = template(htmlTemplate)
     try {
       return compiled(data)
     } catch (e) {
-      console.warn('Template render error, using raw HTML:', e)
       return htmlTemplate
     }
   } catch (e) {
-    console.warn('Template compile error, using raw HTML:', e)
     return htmlTemplate
   }
 }
 
 export function resolveSnippetData(
-  snippetData: Record<string, any> | Record<string, any>[],
-  sampleData: Record<string, any> | Record<string, any>[],
-): Record<string, any> | Record<string, any>[] {
+  snippetData: SnippetData,
+  sampleData: SnippetData,
+): SnippetData {
   // 如果 snippetData 是数组且不为空，使用 snippetData
   if (Array.isArray(snippetData) && snippetData.length > 0) {
     return snippetData

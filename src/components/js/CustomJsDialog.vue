@@ -100,8 +100,9 @@ const jsValidation = computed(() => {
   try {
     new Function(code)
     return { valid: true, errors: [] }
-  } catch (e: any) {
-    return { valid: false, errors: [e.message] }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e)
+    return { valid: false, errors: [message] }
   }
 })
 

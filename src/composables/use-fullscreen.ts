@@ -9,7 +9,7 @@ export function useFullscreen() {
       await el.requestFullscreen()
       isFullscreen.value = true
     } catch (e) {
-      console.error('Fullscreen request failed:', e)
+      // 忽略全屏请求错误
     }
   }
 
@@ -20,7 +20,7 @@ export function useFullscreen() {
       }
       isFullscreen.value = false
     } catch (e) {
-      console.error('Exit fullscreen failed:', e)
+      // 忽略退出全屏错误
     }
   }
 

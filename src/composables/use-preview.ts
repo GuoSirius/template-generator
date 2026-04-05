@@ -1,11 +1,11 @@
 import { computed, ref, type ComputedRef } from 'vue'
-import { compileTemplate, resolveSnippetData, wrapWithContainer, buildSpacingStyle, replacePlaceholders } from '@/engines/template-engine'
+import { compileTemplate, resolveSnippetData, wrapWithContainer, buildSpacingStyle, replacePlaceholders, renderLodashTemplate } from '@/engines/template-engine'
 import { buildPreviewHtml } from '@/engines/preview-renderer'
 import { getTemplateHtml, getTemplateConfig, getSnippetHtml } from '@/engines/yaml-parser'
 import { useSnippetStore } from '@/stores/snippet'
 import { useProjectStore } from '@/stores/project'
 import { useTemplateStore } from '@/stores/template'
-import type { SnippetConfig, SnippetInstance } from '@/types'
+import type { SnippetConfig, SnippetInstance, SnippetData } from '@/types'
 import { createDefaultSpacing } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -38,16 +38,15 @@ export interface RenderedSnippet {
  */
 export function compileSnippetByType(
   html: string,
-  data: Record<string, any> | Record<string, any>[],
+  data: SnippetData,
   formSchemaType: string,
 ): string {
   if (formSchemaType === 'array') {
-    return compileTemplate(html, {
-      features: Array.isArray(data) ? data : [data],
-    })
+    const arrayData = Array.isArray(data) ? data : [data]
+    return compileTemplate(html, { features: arrayData })
   }
   // object 和 objectWithList 类型都直接传入数据
-  return compileTemplate(html, { ...(data as Record<string, any>) })
+  return compileTemplate(html, data)
 }
 
 /**
@@ -65,9 +64,9 @@ export function renderSnippets(
       if (!rawHtml) return null
 
       const data = resolveSnippetData(
-        inst.data as Record<string, any>,
-        config?.sampleData || {},
-      ) as Record<string, any>
+        inst.data,
+        config?.sampleData || {} as SnippetData,
+      )
 
       let compiled: string
       try {
@@ -78,7 +77,6 @@ export function renderSnippets(
         )
       } catch (e) {
         // 编译失败时降级使用原始 HTML（无变量替换），避免整页无法预览
-        console.warn('Snippet compile failed, falling back to raw HTML:', e)
         compiled = rawHtml
       }
 
@@ -103,9 +101,7 @@ export function renderSnippetsByFolder(
       const rawHtml = getHtml(folder)
       if (!rawHtml) return null
 
-      const data = config?.sampleData
-        ? (config.sampleData as Record<string, any>)
-        : {}
+      const data = config?.sampleData || {} as SnippetData
 
       let compiled: string
       try {
@@ -116,12 +112,11 @@ export function renderSnippetsByFolder(
         )
       } catch (e) {
         // 编译失败时降级使用原始 HTML
-        console.warn('Snippet compile failed, falling back to raw HTML:', e)
         compiled = rawHtml
       }
 
       const spacingStyle = buildSpacingStyle(
-        (config?.defaults as any)?.spacing || createDefaultSpacing(),
+        config?.defaults?.spacing || createDefaultSpacing(),
       )
       const className = config?.className || folder
       const placeholder = config?.defaultPlaceholder || ''
@@ -251,7 +246,7 @@ export function usePreview() {
           placeholders = config.placeholders.map((p) => p.name)
         }
       } catch (e) {
-        console.warn('Failed to load template config for placeholders:', e)
+        // 忽略 placeholders 加载错误，不影响预览生成
       }
     }
 
@@ -297,26 +292,45 @@ export function usePreview() {
 
     const project = projectStore.currentProject
 
+    // 显式追踪 htmlCache 以确保 HTML 加载完成后触发重新渲染
+    void snippetStore.htmlCache
+
     // 同步路径：直接使用已缓存的模板数据和配置
-    const bodyContent = extractBodyContent(html)
+    let bodyContent = extractBodyContent(html)
     // 始终渲染当前已有的片段（loadSnippetDetail 会补充 htmlCache）
     const rendered = buildCurrentRenderedSnippets()
+
     const placeholders = getAvailablePlaceholders()
-    const finalBodyContent = replacePlaceholders(bodyContent, rendered, placeholders)
+    bodyContent = replacePlaceholders(bodyContent, rendered, placeholders)
 
     // 优先使用本地值（编辑中未保存的），否则用 store 中的值
     const css = localCustomCss.value || project?.customCss || ''
     const js = localCustomJs.value || project?.customJs || ''
 
-    return buildPreviewHtml(
+    // SEO 数据（模板使用 lodash 模板语法处理）
+    const seoTitle = project?.seo.title || ''
+    const seoDescription = project?.seo.description || ''
+    const seoKeywords = project?.seo.keywords || ''
+
+    // 构建预览 HTML
+    let finalHtml = buildPreviewHtml(
       html,
-      finalBodyContent,
+      bodyContent,
       css,
-      project?.seo.title || '',
-      project?.seo.description || '',
-      project?.seo.keywords || '',
+      seoTitle,
+      seoDescription,
+      seoKeywords,
       js,
     )
+
+    // 使用 lodash 模板渲染完整 HTML（支持 <%= title %> 等语法）
+    finalHtml = renderLodashTemplate(finalHtml, {
+      title: seoTitle,
+      description: seoDescription,
+      keywords: seoKeywords,
+    })
+
+    return finalHtml
   })
 
   // -- 同步 computed + overrides（CSS/JS 对话框编辑中预览）----------------------
@@ -331,10 +345,10 @@ export function usePreview() {
       const project = projectStore.currentProject
 
       // 同步路径
-      const bodyContent = extractBodyContent(html)
+      let bodyContent = extractBodyContent(html)
       const rendered = buildCurrentRenderedSnippets()
       const placeholders = getAvailablePlaceholders()
-      const finalBodyContent = replacePlaceholders(bodyContent, rendered, placeholders)
+      bodyContent = replacePlaceholders(bodyContent, rendered, placeholders)
 
       // 直接访问 overrides 属性，确保 Vue 追踪响应式
       // overrides.css 可能为 undefined（未传）或空字符串（已清空）
@@ -342,15 +356,30 @@ export function usePreview() {
       const css = hasExplicitCss ? overrides.css : (localCustomCss.value || project?.customCss || '')
       const js = overrides.js ?? (localCustomJs.value || project?.customJs || '')
 
-      return buildPreviewHtml(
+      // SEO 数据
+      const seoTitle = overrides.seoTitle ?? (project?.seo.title || '')
+      const seoDescription = overrides.seoDescription ?? (project?.seo.description || '')
+      const seoKeywords = overrides.seoKeywords ?? (project?.seo.keywords || '')
+
+      // 构建预览 HTML
+      let finalHtml = buildPreviewHtml(
         html,
-        finalBodyContent,
+        bodyContent,
         css,
-        overrides.seoTitle ?? (project?.seo.title || ''),
-        overrides.seoDescription ?? (project?.seo.description || ''),
-        overrides.seoKeywords ?? (project?.seo.keywords || ''),
+        seoTitle,
+        seoDescription,
+        seoKeywords,
         js,
       )
+
+      // 使用 lodash 模板渲染完整 HTML
+      finalHtml = renderLodashTemplate(finalHtml, {
+        title: seoTitle,
+        description: seoDescription,
+        keywords: seoKeywords,
+      })
+
+      return finalHtml
     })
   }
 

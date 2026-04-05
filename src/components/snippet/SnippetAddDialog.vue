@@ -280,7 +280,7 @@ async function openTemplatePreview(folder: string) {
     })
     showTemplatePreview.value = true
   } catch (e) {
-    console.error('Template preview failed:', e)
+    // 忽略预览生成错误
   } finally {
     previewAllLoading.value = false
   }
@@ -302,7 +302,7 @@ async function openSelectedPreview() {
     })
     showTemplatePreview.value = true
   } catch (e) {
-    console.error('Template preview failed:', e)
+    // 忽略预览生成错误
   } finally {
     previewAllLoading.value = false
   }

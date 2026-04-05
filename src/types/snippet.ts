@@ -4,6 +4,18 @@ export interface PreviewImage {
   thumbnailUrl?: string
 }
 
+export type FieldValue = string | number | boolean
+
+/** 根据 field.type 映射的默认值类型 */
+export type FieldDefaultValueMap = {
+  text: string
+  textarea: string
+  number: number
+  select: string
+  color: string
+  image: string
+}
+
 export interface SnippetMeta {
   name: string
   version: string
@@ -18,7 +30,7 @@ export interface FieldDef {
   key: string
   label: string
   type: 'text' | 'textarea' | 'number' | 'select' | 'color' | 'image'
-  default: any
+  default: FieldDefaultValueMap[FieldDef['type']]
   options?: string[]
   placeholder?: string
   required?: boolean
@@ -50,12 +62,15 @@ export interface FormSchema {
   fields?: FieldDef[]
 }
 
+/** 片段动态数据结构 */
+export type SnippetData = Record<string, unknown> | Record<string, unknown>[]
+
 export interface SnippetConfig {
   className: string
   defaultPlaceholder: string
-  defaults: Record<string, any>
+  defaults: Record<string, FieldValue> & { spacing?: import('./project').Spacing }
   formSchema: FormSchema
-  sampleData: Record<string, any> | Record<string, any>[]
+  sampleData: SnippetData
 }
 
 export interface SnippetsRegistry {

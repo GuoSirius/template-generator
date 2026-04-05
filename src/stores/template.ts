@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import type { TemplateMeta, TemplateConfig, PagesRegistry } from '@/types'
 import {
   getPagesRegistry,
@@ -9,9 +9,10 @@ import {
 
 export const useTemplateStore = defineStore('template', () => {
   const templates = ref<TemplateMeta[]>([])
-  const currentTemplate = ref<TemplateMeta | null>(null)
-  const currentConfig = ref<TemplateConfig | null>(null)
-  const currentHtml = ref<string>('')
+  // 使用 shallowRef 避免深层响应式追踪问题
+  const currentTemplate = shallowRef<TemplateMeta | null>(null)
+  const currentConfig = shallowRef<TemplateConfig | null>(null)
+  const currentHtml = ref('')
   const loading = ref(false)
 
   const loadTemplates = async () => {
@@ -21,7 +22,7 @@ export const useTemplateStore = defineStore('template', () => {
       const registry = await getPagesRegistry()
       templates.value = registry.templates || []
     } catch (e) {
-      console.error('Failed to load templates:', e)
+      // 忽略模板加载错误
     } finally {
       loading.value = false
     }
@@ -41,7 +42,7 @@ export const useTemplateStore = defineStore('template', () => {
       currentConfig.value = config
       currentHtml.value = html
     } catch (e) {
-      console.error('Failed to load template details:', e)
+      // 忽略模板详情加载错误
     } finally {
       loading.value = false
     }

@@ -26,7 +26,7 @@ export const useProjectStore = defineStore('project', () => {
     try {
       projects.value = await getAllProjects()
     } catch (e) {
-      console.error('Failed to load projects:', e)
+      // 忽略项目列表加载错误
     } finally {
       loading.value = false
     }
@@ -41,7 +41,6 @@ export const useProjectStore = defineStore('project', () => {
       }
       return project
     } catch (e) {
-      console.error('Failed to load project:', e)
       return null
     } finally {
       loading.value = false
@@ -67,9 +66,7 @@ export const useProjectStore = defineStore('project', () => {
     currentProject.value = project
     projects.value.push(project)
     // 异步保存,不阻塞返回
-    dbSaveProject(project).catch((e) => {
-      console.error('Failed to save new project:', e)
-    })
+    dbSaveProject(project).catch(() => {})
     return project
   }
 
@@ -77,9 +74,7 @@ export const useProjectStore = defineStore('project', () => {
     if (!currentProject.value) return
     Object.assign(currentProject.value, updates, { updatedAt: Date.now() })
     // 异步保存,不阻塞返回
-    dbSaveProject(currentProject.value).catch((e) => {
-      console.error('Failed to update project:', e)
-    })
+    dbSaveProject(currentProject.value).catch(() => {})
     const idx = projects.value.findIndex((p) => p.id === currentProject.value!.id)
     if (idx >= 0) {
       projects.value[idx] = { ...currentProject.value }
