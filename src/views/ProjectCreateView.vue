@@ -751,7 +751,7 @@ async function onSaveProject() {
   // 1. 首先确保所有片段资源已加载（使用最新数据）
   await ensureSnippetResources()
 
-  // 2. 使用最新数据生成渲染好的 HTML
+  // 2. 使用最新数据生成渲染好的 HTML（用于预览更新）
   const currentProjectData = {
     ...project.value,
     seo: seoInfo.value,
@@ -766,17 +766,13 @@ async function onSaveProject() {
       sortOrder: s.sortOrder,
     })),
   }
-  const renderedHtml = await generatePreviewHtml(
+  await generatePreviewHtml(
     currentProjectData as unknown as Parameters<typeof generatePreviewHtml>[0],
   )
 
   // 3. 保存项目
   projectStore.completeProject()
   await projectStore.saveCurrentProject()
-
-  // 4. 下载 HTML 打包文件（格式化版 + 压缩版）
-  const safeProjectName = nameForm.value.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')
-  await downloadHtmlPackage(renderedHtml, renderedHtml, safeProjectName)
 
   // 更新初始状态，防止保存后仍提示离开确认
   initialState.value = JSON.stringify({

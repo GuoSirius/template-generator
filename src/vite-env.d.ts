@@ -3,7 +3,7 @@
 // Vue 模块声明 - 允许 TypeScript 识别 .vue 文件
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'
-  const component: DefineComponent<{}, {}, unknown>
+  const component: DefineComponent<object, object, unknown>
   export default component
 }
 
