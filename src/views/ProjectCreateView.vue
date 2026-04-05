@@ -435,9 +435,9 @@ watch(templateFolder, async (folder, oldFolder) => {
 
   await templateStore.selectTemplate(folder)
 
-  // 选择模板后，自动填充 SEO 默认值（如果用户尚未填写）
+  // 选择模板后，自动填充 SEO 默认值
   await nextTick()
-  if (templateStore.currentConfig?.seo && !isSeoFilled.value) {
+  if (templateStore.currentConfig?.seo) {
     seoInfo.value = { ...templateStore.currentConfig.seo }
   }
 })
