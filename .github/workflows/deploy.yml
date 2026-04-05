@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}/template-generator
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
@@ -117,6 +117,10 @@ jobs:
         run: |
           cp public/_redirects dist/_redirects
           cp dist/index.html dist/404.html
+
+      - name: Create Cloudflare Pages project if not exists
+        run: |
+          npx wrangler pages project create template-generator --production-branch=production || true
 
       - name: Deploy to Cloudflare Pages
         run: |
