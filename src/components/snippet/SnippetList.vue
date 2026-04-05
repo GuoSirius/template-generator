@@ -12,7 +12,7 @@
       animation="200"
       @end="onDragEnd"
     >
-      <template #item="{ element, index }">
+      <template #item="{ element }">
         <div
           class="snippet-item"
           :class="{ disabled: !element.enabled, selected: selectedId === element.id }"
@@ -24,7 +24,7 @@
             </div>
             <div class="item-info">
               <span class="item-name">{{ getSnippetName(element.snippetId) }}</span>
-              <span class="item-placeholder">{{ element.properties.placeholder }}</span>
+              <span class="item-placeholder">{{ element.properties?.placeholder }}</span>
             </div>
           </div>
           <div class="item-actions">

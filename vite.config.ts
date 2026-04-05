@@ -33,8 +33,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      host: '0.0.0.0',
-      allowedHosts: true,
       port: 5173,
     },
     build: {

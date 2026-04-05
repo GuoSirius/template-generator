@@ -30,13 +30,9 @@ export async function getProjectById(id: string): Promise<Project | undefined> {
 }
 
 export async function saveProject(project: Project): Promise<void> {
-  try {
-    // 使用 JSON 序列化来深拷贝,避免循环引用
-    const cloned = JSON.parse(JSON.stringify(project))
-    await db.projects.put(cloned)
-  } catch (error) {
-    throw error
-  }
+  // 使用 JSON 序列化来深拷贝，避免循环引用
+  const cloned = JSON.parse(JSON.stringify(project))
+  await db.projects.put(cloned)
 }
 
 export async function deleteProject(id: string): Promise<void> {
