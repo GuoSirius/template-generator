@@ -153,12 +153,7 @@
         <el-table-column type="selection" width="50" />
         <el-table-column prop="name" label="名称" min-width="200">
           <template #default="{ row }">
-            <div class="table-name-cell">
-              <span class="table-name">{{ row.name }}</span>
-              <span class="status-badge" :class="row.status">{{
-                row.status === 'completed' ? '已完成' : '制作中'
-              }}</span>
-            </div>
+            <span class="table-name">{{ row.name }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
