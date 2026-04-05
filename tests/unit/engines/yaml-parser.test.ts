@@ -13,9 +13,6 @@ describe('yaml-parser', () => {
 
   describe('loadYaml', () => {
     it('should fetch and parse YAML data', async () => {
-      const yamlData = { name: 'test', version: '1.0.0' }
-      mockResolvedTextResponse(JSON.stringify(yamlData))
-      
       // Note: loadYaml uses js-yaml.load which expects YAML format
       // We need to return valid YAML
       mockFetch.mockResolvedValueOnce({
@@ -49,12 +46,12 @@ describe('yaml-parser', () => {
         statusText: 'Not Found',
       })
 
-      await expect(loadYaml('missing.yaml')).rejects.toThrow('Failed to load YAML: missing.yaml (404)')
+      await expect(loadYaml('missing.yaml')).rejects.toThrow(
+        'Failed to load YAML: missing.yaml (404)',
+      )
     })
 
     it('should prepend BASE_URL for relative URLs', async () => {
-      void import.meta.env.BASE_URL // ensure BASE_URL is read (no-op in this test)
-
       mockFetch.mockResolvedValue({
         ok: true,
         text: () => Promise.resolve('key: value'),
@@ -106,7 +103,3 @@ describe('yaml-parser', () => {
     })
   })
 })
-
-// Helper for type clarity - actual mocking is done inline above
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _mockResolvedTextResponse(_text: string) {}

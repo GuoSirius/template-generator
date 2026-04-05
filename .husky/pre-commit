@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+# 运行 lint-staged (代码风格检查和自动修复)
+npx lint-staged
+
+# 类型检查
+echo "Running type check..."
+npx vue-tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "Type check failed! Please fix type errors before committing."
+  exit 1
+fi
+
+# 运行测试
+echo "Running tests..."
+npx vitest run --reporter=basic
+if [ $? -ne 0 ]; then
+  echo "Tests failed! Please fix test failures before committing."
+  exit 1
+fi
+
+echo "All checks passed!"
