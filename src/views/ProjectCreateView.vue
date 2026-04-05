@@ -435,9 +435,10 @@ watch(templateFolder, async (folder, oldFolder) => {
 
   await templateStore.selectTemplate(folder)
 
-  // 选择模板后，自动填充 SEO 默认值
+  // 选择模板后，如果 SEO 尚未编辑过，则自动填充新模板的默认 SEO
+  // 已编辑过的 SEO 保持不变，避免用户已填写的内容被覆盖
   await nextTick()
-  if (templateStore.currentConfig?.seo) {
+  if (templateStore.currentConfig?.seo && !isSeoFilled.value) {
     seoInfo.value = { ...templateStore.currentConfig.seo }
   }
 })
