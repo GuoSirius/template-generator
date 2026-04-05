@@ -1,6 +1,2 @@
-# Cloudflare Pages
-/framework-assets/* /__edgio__/framework-assets/:splat 200
-/framework-runtime/* /__edgio__/framework-runtime/:splat 200
-/_assets/* /__edgio__/_assets/:splat 200
-/_static/* /__edgio__/_static/:splat 200
+# Cloudflare Pages SPA fallback
 /* /index.html 200
