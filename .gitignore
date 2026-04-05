@@ -46,6 +46,9 @@ coverage
 # TypeScript build info
 *.tsbuildinfo
 
+# Auto-generated type declarations (Vue components)
+src/components.d.ts
+
 # Husky
 .husky/_
 
