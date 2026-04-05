@@ -18,7 +18,7 @@ concurrency:
 
 env:
   NODE_VERSION: '24'
-  VITE_BASE: '/template-generator'
+  VITE_BASE: '/template-generator/'
 
 jobs:
   lint-and-test:
@@ -122,8 +122,8 @@ jobs:
 
       - name: Create Cloudflare Pages project if not exists
         run: |
-          # Try to create the project, ignore if already exists
-          npx wrangler pages project create template-generator --production-branch=production 2>&1 || true
+          npm install -g wrangler
+          wrangler pages project create template-generator --production-branch=production 2>&1 || true
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
