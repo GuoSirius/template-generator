@@ -29,19 +29,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { FileText } from 'lucide-vue-next'
 import type { TemplateMeta } from '@/types'
-
-// 获取缩略图URL（保留函数供其他地方使用）
-function getThumbnailUrl(thumbnailPath: string): string {
-  if (!thumbnailPath) return ''
-  // 如果已经是完整URL，直接返回
-  if (thumbnailPath.startsWith('http://') || thumbnailPath.startsWith('https://')) {
-    return thumbnailPath
-  }
-  // 否则从public目录加载
-  return `/template/pages/${thumbnailPath}`
-}
 
 const props = defineProps<{
   templates: TemplateMeta[]

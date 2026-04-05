@@ -53,8 +53,8 @@ describe('yaml-parser', () => {
     })
 
     it('should prepend BASE_URL for relative URLs', async () => {
-      const originalBase = import.meta.env.BASE_URL
-      
+      void import.meta.env.BASE_URL // ensure BASE_URL is read (no-op in this test)
+
       mockFetch.mockResolvedValue({
         ok: true,
         text: () => Promise.resolve('key: value'),
@@ -107,6 +107,6 @@ describe('yaml-parser', () => {
   })
 })
 
-function mockResolvedTextResponse(_text: string) {
-  // Helper for type clarity - actual mocking is done inline above
-}
+// Helper for type clarity - actual mocking is done inline above
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _mockResolvedTextResponse(_text: string) {}

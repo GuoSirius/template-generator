@@ -1,20 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // Mock database module - fully mock Dexie operations
-const mockProjects: Map<string, any> = new Map()
-const mockPreferences: Map<string, any> = new Map()
+const mockProjects = new Map<string, Project>()
+const mockPreferences = new Map<string, { id: string; mode: string }>()
 
 vi.mock('@/database', () => ({
   db: {
     projects: {
       clear: vi.fn(async () => mockProjects.clear()),
-      put: vi.fn(async (item: any) => mockProjects.set(item.id, item)),
+      put: vi.fn(async (item: Project) => mockProjects.set(item.id, item)),
       get: vi.fn(async (id: string) => mockProjects.get(id)),
       delete: vi.fn(async (id: string) => mockProjects.delete(id)),
       orderBy: vi.fn(() => ({
         reverse: vi.fn(() => ({
           toArray: vi.fn(async () =>
-            Array.from(mockProjects.values()).sort((a: any, b: any) => b.updatedAt - a.updatedAt)
+            Array.from(mockProjects.values()).sort((a, b) => b.updatedAt - a.updatedAt)
           ),
         })),
       })),
@@ -22,15 +22,15 @@ vi.mock('@/database', () => ({
     },
     preferences: {
       clear: vi.fn(async () => mockPreferences.clear()),
-      put: vi.fn(async (item: any) => mockPreferences.set(item.id, item)),
+      put: vi.fn(async (item: { id: string; mode: string }) => mockPreferences.set(item.id, item)),
       get: vi.fn(async (id: string) => mockPreferences.get(id)),
     },
   },
   getAllProjects: vi.fn(async () =>
-    Array.from(mockProjects.values()).sort((a: any, b: any) => b.updatedAt - a.updatedAt)
+    Array.from(mockProjects.values()).sort((a, b) => b.updatedAt - a.updatedAt)
   ),
   getProjectById: vi.fn(async (id: string) => mockProjects.get(id)),
-  saveProject: vi.fn(async (project: any) => {
+  saveProject: vi.fn(async (project: Project) => {
     const cloned = JSON.parse(JSON.stringify(project))
     mockProjects.set(cloned.id, cloned)
   }),
@@ -46,7 +46,6 @@ vi.mock('@/database', () => ({
 
 // Import after mocks are set up
 import {
-  db,
   getAllProjects,
   getProjectById,
   saveProject,
@@ -55,7 +54,7 @@ import {
   saveThemePreference,
 } from '@/database'
 import type { Project, SeoInfo } from '@/types'
-import { createDefaultSeo, createSnippetProperties } from '@/types'
+import { createSnippetProperties } from '@/types'
 
 function makeTestProject(overrides: Partial<Project> = {}): Project {
   const seo: SeoInfo = { title: 'Test Project', keywords: 'test', description: 'A test project' }

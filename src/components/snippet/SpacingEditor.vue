@@ -98,7 +98,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: Spacing]
 }>()
 
-const directions = ['top', 'right', 'bottom', 'left'] as const
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _directions = ['top', 'right', 'bottom', 'left'] as const
 
 function updateField(direction: 'top' | 'right' | 'bottom' | 'left', value: number | undefined) {
   emit('update:modelValue', {

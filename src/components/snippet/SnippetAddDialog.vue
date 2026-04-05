@@ -279,7 +279,7 @@ async function openTemplatePreview(folder: string) {
       seoKeywords: props.seoKeywords || '',
     })
     showTemplatePreview.value = true
-  } catch (e) {
+  } catch {
     // 忽略预览生成错误
   } finally {
     previewAllLoading.value = false
@@ -301,7 +301,7 @@ async function openSelectedPreview() {
       seoKeywords: props.seoKeywords || '',
     })
     showTemplatePreview.value = true
-  } catch (e) {
+  } catch {
     // 忽略预览生成错误
   } finally {
     previewAllLoading.value = false

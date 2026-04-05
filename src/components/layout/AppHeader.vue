@@ -27,7 +27,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { Sun, Moon, Monitor } from 'lucide-vue-next'
 import { useTheme } from '@/composables/use-theme'
 

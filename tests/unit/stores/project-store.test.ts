@@ -2,15 +2,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
 // Mock the entire database module before importing store
-const mockProjects: Map<string, any> = new Map()
-const mockPreferences: Map<string, any> = new Map()
+const mockProjects = new Map<string, Project>()
+const mockPreferences = new Map<string, { id: string; mode: string }>()
 
 vi.mock('@/database', () => ({
   getAllProjects: vi.fn(async () => Array.from(mockProjects.values()).sort(
-    (a: any, b: any) => b.updatedAt - a.updatedAt
+    (a, b) => b.updatedAt - a.updatedAt
   )),
   getProjectById: vi.fn(async (id: string) => mockProjects.get(id)),
-  saveProject: vi.fn(async (project: any) => {
+  saveProject: vi.fn(async (project: Project) => {
     const cloned = JSON.parse(JSON.stringify(project))
     mockProjects.set(cloned.id, cloned)
   }),
@@ -28,7 +28,8 @@ import { useProjectStore } from '@/stores/project'
 import type { Project } from '@/types'
 import { createDefaultSeo } from '@/types'
 
-function makeTestProject(overrides: Partial<Project> & { id: string; name: string; templateId: string }): Project {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _makeTestProject(overrides: Partial<Project> & { id: string; name: string; templateId: string }): Project {
   return {
     seo: createDefaultSeo(),
     status: 'draft',

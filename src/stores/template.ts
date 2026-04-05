@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef } from 'vue'
-import type { TemplateMeta, TemplateConfig, PagesRegistry } from '@/types'
+import type { TemplateMeta, TemplateConfig } from '@/types'
 import {
   getPagesRegistry,
   getTemplateConfig,
@@ -21,7 +21,7 @@ export const useTemplateStore = defineStore('template', () => {
     try {
       const registry = await getPagesRegistry()
       templates.value = registry.templates || []
-    } catch (e) {
+    } catch {
       // 忽略模板加载错误
     } finally {
       loading.value = false
@@ -41,7 +41,7 @@ export const useTemplateStore = defineStore('template', () => {
       ])
       currentConfig.value = config
       currentHtml.value = html
-    } catch (e) {
+    } catch {
       // 忽略模板详情加载错误
     } finally {
       loading.value = false

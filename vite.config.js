@@ -6,6 +6,7 @@ import Components from 'unplugin-vue-components/vite';
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import process from 'node:process';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');

@@ -75,10 +75,10 @@ export function renderSnippets(
           data,
           config?.formSchema.type || 'object',
         )
-      } catch (e) {
-        // 编译失败时降级使用原始 HTML（无变量替换），避免整页无法预览
-        compiled = rawHtml
-      }
+    } catch {
+      // 编译失败时降级使用原始 HTML（无变量替换），避免整页无法预览
+      compiled = rawHtml
+    }
 
       const spacingStyle = buildSpacingStyle(inst.properties.spacing)
       const wrapped = wrapWithContainer(compiled, inst.properties.className, spacingStyle)
@@ -110,10 +110,10 @@ export function renderSnippetsByFolder(
           data,
           config?.formSchema.type || 'object',
         )
-      } catch (e) {
-        // 编译失败时降级使用原始 HTML
-        compiled = rawHtml
-      }
+    } catch {
+      // 编译失败时降级使用原始 HTML
+      compiled = rawHtml
+    }
 
       const spacingStyle = buildSpacingStyle(
         config?.defaults?.spacing || createDefaultSpacing(),
@@ -245,8 +245,8 @@ export function usePreview() {
         if (config?.placeholders) {
           placeholders = config.placeholders.map((p) => p.name)
         }
-      } catch (e) {
-        // 忽略 placeholders 加载错误，不影响预览生成
+    } catch {
+      // 忽略 placeholders 加载错误，不影响预览生成
       }
     }
 

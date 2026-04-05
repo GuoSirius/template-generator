@@ -12,9 +12,12 @@ export function buildPreviewHtml(
   templateHtml: string,
   bodyContent: string,
   customCss: string = '',
-  seoTitle: string = '',
-  seoDescription: string = '',
-  seoKeywords: string = '',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _seoTitle: string = '',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _seoDescription: string = '',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _seoKeywords: string = '',
   customJs: string = '',
 ): string {
   let html = templateHtml
@@ -71,7 +74,8 @@ export function buildSnippetPreviewHtml(
 </html>`
 }
 
-function escapeHtml(str: string): string {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

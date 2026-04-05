@@ -432,7 +432,7 @@ watch([localCustomCss, localCustomJs], () => {
     try {
       projectStore.setCustomCss(localCustomCss.value)
       projectStore.setCustomJs(localCustomJs.value)
-    } catch (e) {
+    } catch {
       // 忽略同步错误
     }
   }
@@ -442,7 +442,7 @@ watch(seoInfo, (val) => {
   if (project.value && isSeoFilled.value) {
     try {
       projectStore.updateSeo(val)
-    } catch (e) {
+    } catch {
       // 忽略 SEO 更新错误
     }
   }
@@ -637,7 +637,7 @@ async function onPreviewSnippet(id: string) {
     
     snippetPreviewHtml.value = previewHtml
     showSnippetPreview.value = true
-  } catch (e) {
+  } catch {
     ElMessage.error('生成预览失败')
   }
 }

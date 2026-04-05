@@ -4,11 +4,9 @@ import type {
   TemplateConfig,
   SnippetsRegistry,
   SnippetConfig,
-  TemplateMeta,
-  SnippetMeta,
 } from '@/types'
 
-const cache = new Map<string, any>()
+const cache = new Map<string, unknown>()
 
 export async function loadYaml<T>(url: string): Promise<T> {
   if (cache.has(url)) {

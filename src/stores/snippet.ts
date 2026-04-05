@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { SnippetMeta, SnippetConfig, SnippetsRegistry } from '@/types'
+import type { SnippetMeta, SnippetConfig } from '@/types'
 import {
   getSnippetsRegistry,
   getSnippetConfig,
@@ -19,7 +19,7 @@ export const useSnippetStore = defineStore('snippet', () => {
     try {
       const registry = await getSnippetsRegistry()
       snippets.value = registry.snippets || []
-    } catch (e) {
+    } catch {
       // 忽略片段加载错误
     } finally {
       loading.value = false
@@ -39,7 +39,7 @@ export const useSnippetStore = defineStore('snippet', () => {
         if (html && html.length > 0) {
           htmlCache.value.set(folder, html)
         }
-      } catch (e) {
+      } catch {
         // 忽略 HTML 加载错误
       }
       return configs.value.get(folder)!
@@ -58,7 +58,7 @@ export const useSnippetStore = defineStore('snippet', () => {
         htmlCache.value.set(folder, html)
       }
       return config
-    } catch (e) {
+    } catch {
       return null
     } finally {
       loading.value = false

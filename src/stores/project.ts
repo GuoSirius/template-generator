@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Project, SnippetInstance, SeoInfo } from '@/types'
-import { createDefaultSpacing, createDefaultSeo, createSnippetProperties } from '@/types'
+import { createDefaultSeo, createSnippetProperties } from '@/types'
 import {
   getAllProjects,
   getProjectById,
@@ -25,7 +25,7 @@ export const useProjectStore = defineStore('project', () => {
     loading.value = true
     try {
       projects.value = await getAllProjects()
-    } catch (e) {
+    } catch {
       // 忽略项目列表加载错误
     } finally {
       loading.value = false
@@ -40,7 +40,7 @@ export const useProjectStore = defineStore('project', () => {
         currentProject.value = project
       }
       return project
-    } catch (e) {
+    } catch {
       return null
     } finally {
       loading.value = false

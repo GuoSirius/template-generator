@@ -318,7 +318,7 @@ const previewProject = async (project: Project) => {
   try {
     previewHtml.value = await generatePreviewHtml(project)
     showPreview.value = true
-  } catch (e) {
+  } catch {
     ElMessage.error('预览失败')
   }
 }

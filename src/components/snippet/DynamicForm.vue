@@ -292,16 +292,16 @@ import { getDefaultFormData, createEmptyFormData, isItemCompleted, isListItemCom
 
 const props = defineProps<{
   schema: FormSchema
-  modelValue: Record<string, any> | Record<string, any>[]
-  sampleData?: Record<string, any> | Record<string, any>[]
+  modelValue: Record<string, unknown> | Record<string, unknown>[]
+  sampleData?: Record<string, unknown> | Record<string, unknown>[]
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: Record<string, any> | Record<string, any>[]]
+  'update:modelValue': [value: Record<string, unknown> | Record<string, unknown>[]]
 }>()
 
-const objectData = reactive<Record<string, any>>({})
-const arrayList = reactive<Record<string, any>[]>([])
+const objectData = reactive<Record<string, unknown>>({})
+const arrayList = reactive<Record<string, unknown>[]>([])
 let isInternalUpdate = false
 
 // 获取 formGroups 用于 objectWithList
@@ -323,8 +323,8 @@ function getFieldsForSchema(): FieldDef[] {
 }
 
 // 处理字段值的空格
-function processTrim(data: Record<string, any>, fields: FieldDef[]): Record<string, any> {
-  const result: Record<string, any> = {}
+function processTrim(data: Record<string, unknown>, fields: FieldDef[]): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
   for (const field of fields) {
     const value = data[field.key]
     if (typeof value === 'string') {
@@ -408,14 +408,14 @@ function initFromValue() {
       if (props.schema.groups) {
         for (const group of props.schema.groups) {
           if (group.type === 'object') {
-            const objData: Record<string, any> = {}
+            const objData: Record<string, unknown> = {}
             for (const field of group.fields) {
               objData[field.key] = field.default ?? ''
             }
             objectData[group.name] = objData
           } else if (group.type === 'array') {
-            const arrData: Record<string, any>[] = []
-            const itemData: Record<string, any> = {}
+            const arrData: Record<string, unknown>[] = []
+            const itemData: Record<string, unknown> = {}
             for (const field of group.fields) {
               itemData[field.key] = field.default ?? ''
             }
@@ -423,7 +423,7 @@ function initFromValue() {
             objectData[group.name] = arrData
             // 确保 partners 数组至少有一个空项，避免模板访问 undefined
             if (group.name === 'partners' && arrData.length === 0) {
-              const emptyItem: Record<string, any> = {}
+              const emptyItem: Record<string, unknown> = {}
               for (const field of group.fields) {
                 emptyItem[field.key] = field.default ?? ''
               }
@@ -474,9 +474,9 @@ watch(() => props.schema, () => {
 const allFields = getFieldsForSchema()
 
 // 包装 emit，处理空格
-function emitWithTrim(val: Record<string, any> | Record<string, any>[]) {
+function emitWithTrim(val: Record<string, unknown> | Record<string, unknown>[]) {
   // 深拷贝
-  let processed: Record<string, any> | Record<string, any>[]
+  let processed: Record<string, unknown> | Record<string, unknown>[]
   if (Array.isArray(val)) {
     // 数组类型：处理每一项
     processed = val.map(item => processTrim(item, allFields))
@@ -557,7 +557,7 @@ function addListItem(groupName: string, fields: FieldDef[]) {
       return
     }
   }
-  const itemData: Record<string, any> = {}
+  const itemData: Record<string, unknown> = {}
   for (const field of fields) {
     itemData[field.key] = field.default ?? ''
   }

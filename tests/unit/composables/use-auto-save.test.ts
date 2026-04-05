@@ -40,7 +40,7 @@ describe('useAutoSave', () => {
 
   it('should save project with updated timestamp', async () => {
     const project = makeTestProject()
-    const originalUpdatedAt = project.updatedAt
+    void project.updatedAt
     
     // Wait a tiny bit to ensure different timestamps
     await new Promise((r) => setTimeout(r, 10))

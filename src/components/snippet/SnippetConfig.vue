@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { SnippetConfig, SnippetMeta, Spacing, Placeholder } from '@/types'
+import type { SnippetConfig, SnippetMeta, Spacing } from '@/types'
 import SpacingEditor from './SpacingEditor.vue'
 import PlaceholderSelector from './PlaceholderSelector.vue'
 import ClassNameInput from './ClassNameInput.vue'

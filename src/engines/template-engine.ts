@@ -9,7 +9,7 @@ export function renderLodashTemplate(html: string, data: Record<string, FieldVal
   try {
     const compiled = template(html)
     return compiled(data)
-  } catch (e) {
+  } catch {
     // 模板语法不存在，使用原始 HTML
     return html
   }
@@ -20,10 +20,10 @@ export function compileTemplate(htmlTemplate: string, data: SnippetData): string
     const compiled = template(htmlTemplate)
     try {
       return compiled(data)
-    } catch (e) {
+    } catch {
       return htmlTemplate
     }
-  } catch (e) {
+  } catch {
     return htmlTemplate
   }
 }
@@ -62,7 +62,8 @@ export function wrapWithContainer(html: string, className: string, spacingStyle:
   return `<div class="${className}" style="${spacingStyle}">${html}</div>`
 }
 
-const PLACEHOLDER_REGEX = /<!--\s*placeholder:([\w-]+)\s*-->/g
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _PLACEHOLDER_REGEX = /<!--\s*placeholder:([\w-]+)\s*-->/g
 
 /**
  * 从 placeholder 字符串中提取占位符名称。

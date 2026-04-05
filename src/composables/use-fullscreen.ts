@@ -8,7 +8,7 @@ export function useFullscreen() {
       const el = element || document.documentElement
       await el.requestFullscreen()
       isFullscreen.value = true
-    } catch (e) {
+    } catch {
       // 忽略全屏请求错误
     }
   }
@@ -19,7 +19,7 @@ export function useFullscreen() {
         await document.exitFullscreen()
       }
       isFullscreen.value = false
-    } catch (e) {
+    } catch {
       // 忽略退出全屏错误
     }
   }
