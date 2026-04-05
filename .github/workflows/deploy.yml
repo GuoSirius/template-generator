@@ -68,9 +68,7 @@ jobs:
 
       - name: Add routing rules
         run: |
-          # Add _redirects for Cloudflare Pages SPA routing
           cp public/_redirects dist/_redirects
-          # Add 404.html for GitHub Pages SPA fallback
           cp dist/index.html dist/404.html
 
       - uses: actions/upload-pages-artifact@v3
@@ -120,10 +118,12 @@ jobs:
           cp public/_redirects dist/_redirects
           cp dist/index.html dist/404.html
 
-      - name: Create Cloudflare Pages project if not exists
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Create Cloudflare Pages project
         run: |
-          npm install -g wrangler
-          wrangler pages project create template-generator --production-branch=production 2>&1 || true
+          wrangler pages project create template-generator --production-branch=production --yes || echo "Project may already exist"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
