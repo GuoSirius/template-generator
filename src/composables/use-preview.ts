@@ -1,11 +1,11 @@
 import { computed, ref, type ComputedRef } from 'vue'
-import { compileTemplate, resolveSnippetData, wrapWithContainer, buildSpacingStyle, replacePlaceholders, renderLodashTemplate } from '@/engines/template-engine'
+import { compileTemplate, resolveSnippetData, replacePlaceholders, renderLodashTemplate } from '@/engines/template-engine'
 import { buildPreviewHtml } from '@/engines/preview-renderer'
 import { getTemplateHtml, getTemplateConfig, getSnippetHtml } from '@/engines/yaml-parser'
 import { useSnippetStore } from '@/stores/snippet'
 import { useProjectStore } from '@/stores/project'
 import { useTemplateStore } from '@/stores/template'
-import type { SnippetConfig, SnippetInstance, SnippetData } from '@/types'
+import type { SnippetConfig, SnippetInstance, SnippetData, SnippetProperties } from '@/types'
 import { createDefaultSpacing } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -39,18 +39,25 @@ export interface RenderedSnippet {
 export function compileSnippetByType(
   html: string,
   data: SnippetData,
+  properties: SnippetProperties,
   formSchemaType: string,
 ): string {
+  // 将表单数据和属性数据统一传入模板，由模板自行处理
+  const templateData = {
+    ...data,
+    properties,
+  }
   if (formSchemaType === 'array') {
     const arrayData = Array.isArray(data) ? data : [data]
-    return compileTemplate(html, { features: arrayData })
+    return compileTemplate(html, { features: arrayData, properties })
   }
   // object 和 objectWithList 类型都直接传入数据
-  return compileTemplate(html, data)
+  return compileTemplate(html, templateData)
 }
 
 /**
  * 渲染一组片段实例为 { placeholder, html } 数组。
+ * 片段的 data 和 properties 统一传入模板，由模板自行处理渲染。
  */
 export function renderSnippets(
   instances: SnippetInstance[],
@@ -73,22 +80,23 @@ export function renderSnippets(
         compiled = compileSnippetByType(
           rawHtml,
           data,
+          inst.properties,
           config?.formSchema.type || 'object',
         )
-    } catch {
-      // 编译失败时降级使用原始 HTML（无变量替换），避免整页无法预览
-      compiled = rawHtml
-    }
+      } catch {
+        // 编译失败时降级使用原始 HTML（无变量替换），避免整页无法预览
+        compiled = rawHtml
+      }
 
-      const spacingStyle = buildSpacingStyle(inst.properties.spacing)
-      const wrapped = wrapWithContainer(compiled, inst.properties.className, spacingStyle)
-      return { placeholder: inst.properties.placeholder, html: wrapped }
+      // 模板自行处理容器包装和样式，片段只返回渲染后的内容
+      return { placeholder: inst.properties.placeholder, html: compiled }
     })
     .filter(Boolean) as RenderedSnippet[]
 }
 
 /**
  * 根据片段配置信息渲染片段（用于 SnippetAddDialog 等无 SnippetInstance 的场景）
+ * 片段的 data 和 properties 统一传入模板，由模板自行处理渲染。
  */
 export function renderSnippetsByFolder(
   folders: string[],
@@ -102,26 +110,27 @@ export function renderSnippetsByFolder(
       if (!rawHtml) return null
 
       const data = config?.sampleData || {} as SnippetData
+      const properties = {
+        className: config?.className || '',
+        placeholder: config?.defaultPlaceholder ? `placeholder:${config.defaultPlaceholder}` : '',
+        spacing: config?.defaults?.spacing || createDefaultSpacing(),
+      }
 
       let compiled: string
       try {
         compiled = compileSnippetByType(
           rawHtml,
           data,
+          properties,
           config?.formSchema.type || 'object',
         )
-    } catch {
-      // 编译失败时降级使用原始 HTML
-      compiled = rawHtml
-    }
+      } catch {
+        // 编译失败时降级使用原始 HTML
+        compiled = rawHtml
+      }
 
-      const spacingStyle = buildSpacingStyle(
-        config?.defaults?.spacing || createDefaultSpacing(),
-      )
-      const className = config?.className || folder
-      const placeholder = config?.defaultPlaceholder || ''
-      const wrapped = wrapWithContainer(compiled, className, spacingStyle)
-      return { placeholder, html: wrapped }
+      // 模板自行处理容器包装和样式，片段只返回渲染后的内容
+      return { placeholder: properties.placeholder, html: compiled }
     })
     .filter(Boolean) as RenderedSnippet[]
 }

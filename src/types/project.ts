@@ -70,3 +70,11 @@ export function createSnippetProperties(
     spacing: createDefaultSpacing(),
   }
 }
+
+export function createDefaultProperties(): SnippetProperties {
+  return {
+    placeholder: '',
+    className: '',
+    spacing: createDefaultSpacing(),
+  }
+}

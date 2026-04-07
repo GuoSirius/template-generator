@@ -48,20 +48,6 @@ export function resolveSnippetData(
   return Array.isArray(snippetData) ? [] : {}
 }
 
-export function buildSpacingStyle(spacing: {
-  top: { value: number; unit: string }
-  right: { value: number; unit: string }
-  bottom: { value: number; unit: string }
-  left: { value: number; unit: string }
-}): string {
-  const { top, right, bottom, left } = spacing
-  return `margin: ${top.value}${top.unit} ${right.value}${right.unit} ${bottom.value}${bottom.unit} ${left.value}${left.unit};`
-}
-
-export function wrapWithContainer(html: string, className: string, spacingStyle: string): string {
-  return `<div class="${className}" style="${spacingStyle}">${html}</div>`
-}
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _PLACEHOLDER_REGEX = /<!--\s*placeholder:([\w-]+)\s*-->/g
 

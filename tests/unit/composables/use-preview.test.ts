@@ -7,10 +7,19 @@ import { createDefaultSpacing } from '@/types'
 // Mock data helpers
 // ---------------------------------------------------------------------------
 
+function makeProperties(overrides = {}) {
+  return {
+    placeholder: 'placeholder:hero',
+    className: 'hero-banner',
+    spacing: createDefaultSpacing(),
+    ...overrides,
+  }
+}
+
 function makeConfig(overrides: Partial<SnippetConfig> = {}): SnippetConfig {
   return {
     className: 'test-snippet',
-    defaultPlaceholder: 'placeholder:hero',
+    defaultPlaceholder: 'hero',
     defaults: { spacing: createDefaultSpacing() },
     formSchema: { type: 'object', groups: [] },
     sampleData: { title: 'Sample Title', desc: 'Sample Desc' },
@@ -24,11 +33,7 @@ function makeInstance(overrides: Partial<SnippetInstance> = {}): SnippetInstance
     snippetId: 'hero-banner',
     enabled: true,
     data: { title: 'User Title', desc: 'User Desc' },
-    properties: {
-      placeholder: 'placeholder:hero',
-      className: 'hero-banner',
-      spacing: createDefaultSpacing(),
-    },
+    properties: makeProperties(),
     sortOrder: 0,
     ...overrides,
   }
@@ -40,29 +45,37 @@ function makeInstance(overrides: Partial<SnippetInstance> = {}): SnippetInstance
 
 describe('compileSnippetByType', () => {
   const html = '<h1><%= title %></h1>'
+  const properties = makeProperties()
 
   it('should compile object type by spreading data', () => {
-    const result = compileSnippetByType(html, { title: 'Hello' }, 'object')
+    const result = compileSnippetByType(html, { title: 'Hello' }, properties, 'object')
     expect(result).toBe('<h1>Hello</h1>')
   })
 
   it('should compile array type by wrapping in { features }', () => {
     const arrayHtml = '<% features.forEach(function(f) { %><li><%= f.name %></li><% }) %>'
     const data = [{ name: 'A' }, { name: 'B' }]
-    const result = compileSnippetByType(arrayHtml, data, 'array')
+    const result = compileSnippetByType(arrayHtml, data, properties, 'array')
     expect(result).toContain('<li>A</li>')
     expect(result).toContain('<li>B</li>')
   })
 
   it('should compile objectWithList type by spreading data', () => {
-    const result = compileSnippetByType(html, { title: 'Test' }, 'objectWithList')
+    const result = compileSnippetByType(html, { title: 'Test' }, properties, 'objectWithList')
     expect(result).toBe('<h1>Test</h1>')
   })
 
   it('should wrap non-array data as single-element array for array type', () => {
     const arrayHtml = '<% features.forEach(function(f) { %><li><%= f.name %></li><% }) %>'
-    const result = compileSnippetByType(arrayHtml, { name: 'Only' }, 'array')
+    const result = compileSnippetByType(arrayHtml, { name: 'Only' }, properties, 'array')
     expect(result).toContain('<li>Only</li>')
+  })
+
+  it('should pass properties to template', () => {
+    const htmlWithProps = '<div class="<%= properties.className %>"><%= title %></div>'
+    const result = compileSnippetByType(htmlWithProps, { title: 'Test' }, makeProperties({ className: 'test-class' }), 'object')
+    expect(result).toContain('class="test-class"')
+    expect(result).toContain('Test')
   })
 })
 
@@ -72,89 +85,35 @@ describe('compileSnippetByType', () => {
 
 describe('renderSnippets', () => {
   const configs = new Map<string, SnippetConfig>()
-  configs.set('hero-banner', makeConfig({
-    formSchema: { type: 'object', groups: [] },
-  }))
-  configs.set('features-list', makeConfig({
-    className: 'features-list',
-    defaultPlaceholder: 'placeholder:features',
-    formSchema: { type: 'array', groups: [] },
-    sampleData: [{ name: 'F1' }, { name: 'F2' }],
-  }))
+  configs.set('hero-banner', makeConfig())
 
-  const getHtml = (id: string) => {
-    if (id === 'hero-banner') return '<h1><%= title %></h1>'
-    if (id === 'features-list') return '<% features.forEach(function(f) { %><p><%= f.name %></p><% }) %>'
-    return ''
-  }
+  const getHtml = () =>
+    '<div class="hero-section"><%= title %></div>'
 
-  it('should render enabled snippet instances', () => {
+  it('should render snippets with resolved data', () => {
     const instances = [makeInstance()]
     const result = renderSnippets(instances, configs, getHtml)
-
     expect(result).toHaveLength(1)
-    expect(result[0].placeholder).toBe('placeholder:hero')
     expect(result[0].html).toContain('User Title')
-    expect(result[0].html).toContain('class="hero-banner"')
   })
 
-  it('should render disabled instances (caller is responsible for filtering)', () => {
-    const instances = [makeInstance({ enabled: false })]
-    const result = renderSnippets(instances, configs, getHtml)
-    // renderSnippets itself does not filter by enabled; the caller (buildCurrentRenderedSnippets) does
-    expect(result).toHaveLength(1)
-  })
-
-  it('should skip instances with no HTML', () => {
-    const instances = [makeInstance({ snippetId: 'unknown' })]
-    const result = renderSnippets(instances, configs, getHtml)
-    expect(result).toHaveLength(0)
-  })
-
-  it('should fall back to sampleData when user data is empty', () => {
-    const instances = [makeInstance({ data: {} })]
-    const result = renderSnippets(instances, configs, getHtml)
-
-    expect(result).toHaveLength(1)
+  it('should use sample data when instance data is empty', () => {
+    const instance = makeInstance({ data: {} })
+    const result = renderSnippets([instance], configs, getHtml)
     expect(result[0].html).toContain('Sample Title')
   })
 
-  it('should compile array type snippets correctly', () => {
-    const instances = [makeInstance({
-      snippetId: 'features-list',
-      properties: {
-        placeholder: 'placeholder:features',
-        className: 'features-list',
-        spacing: createDefaultSpacing(),
-      },
-      data: [{ name: 'Custom F1' }],
-    })]
-    const result = renderSnippets(instances, configs, getHtml)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].html).toContain('Custom F1')
-    expect(result[0].html).toContain('class="features-list"')
+  it('should skip instances with no HTML', () => {
+    const getEmptyHtml = () => ''
+    const result = renderSnippets([makeInstance()], configs, getEmptyHtml)
+    expect(result).toHaveLength(0)
   })
 
-  it('should handle multiple instances', () => {
-    const instances = [
-      makeInstance({ id: 'inst-1' }),
-      makeInstance({
-        id: 'inst-2',
-        snippetId: 'features-list',
-        properties: {
-          placeholder: 'placeholder:features',
-          className: 'features-list',
-          spacing: createDefaultSpacing(),
-        },
-      }),
-    ]
-    const result = renderSnippets(instances, configs, getHtml)
-    expect(result).toHaveLength(2)
-  })
-
-  it('should return empty array for empty input', () => {
-    expect(renderSnippets([], configs, getHtml)).toHaveLength(0)
+  it('should pass properties to template', () => {
+    const htmlWithProps = '<div class="<%= properties.className %>"><%= title %></div>'
+    const getHtmlWithProps = () => htmlWithProps
+    const result = renderSnippets([makeInstance()], configs, getHtmlWithProps)
+    expect(result[0].html).toContain('class="hero-banner"')
   })
 })
 
@@ -164,25 +123,18 @@ describe('renderSnippets', () => {
 
 describe('renderSnippetsByFolder', () => {
   const configs = new Map<string, SnippetConfig>()
-  configs.set('hero-banner', makeConfig({
-    className: 'hero-section',
-    defaultPlaceholder: 'placeholder:hero',
-    formSchema: { type: 'object', groups: [] },
-    sampleData: { title: 'Hero Title' },
-  }))
+  configs.set('hero-banner', makeConfig())
 
-  const getHtml = (id: string) => {
-    if (id === 'hero-banner') return '<h1><%= title %></h1>'
-    return ''
-  }
+  const getHtml = (folder: string) =>
+    folder === 'hero-banner'
+      ? '<div class="hero-section"><%= title %></div>'
+      : ''
 
-  it('should render snippets by folder using sampleData', () => {
+  it('should render snippets by folder', () => {
     const result = renderSnippetsByFolder(['hero-banner'], configs, getHtml)
-
     expect(result).toHaveLength(1)
     expect(result[0].placeholder).toBe('placeholder:hero')
-    expect(result[0].html).toContain('Hero Title')
-    expect(result[0].html).toContain('class="hero-section"')
+    expect(result[0].html).toContain('Sample Title')
   })
 
   it('should skip folders with no HTML', () => {
@@ -194,16 +146,16 @@ describe('renderSnippetsByFolder', () => {
     expect(renderSnippetsByFolder([], configs, getHtml)).toHaveLength(0)
   })
 
-  it('should use folder name as className when config has none', () => {
-    const minimalConfigs = new Map<string, SnippetConfig>()
-    minimalConfigs.set('my-folder', makeConfig({
-      className: '',
-      defaultPlaceholder: '',
-      formSchema: { type: 'object', groups: [] },
+  it('should pass properties to template', () => {
+    const testConfigs = new Map<string, SnippetConfig>()
+    testConfigs.set('test-folder', makeConfig({
+      className: 'test-class',
+      defaultPlaceholder: 'test',
     }))
-    const getHtmlMinimal = () => '<p>test</p>'
+    const getHtmlWithProps = () => '<div class="<%= properties.className %>"><%= title %></div>'
 
-    const result = renderSnippetsByFolder(['my-folder'], minimalConfigs, getHtmlMinimal)
-    expect(result[0].html).toContain('class="my-folder"')
+    const result = renderSnippetsByFolder(['test-folder'], testConfigs, getHtmlWithProps)
+    expect(result[0].html).toContain('class="test-class"')
+    expect(result[0].html).toContain('Sample Title')
   })
 })

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { compileTemplate, resolveSnippetData, buildSpacingStyle, wrapWithContainer, replacePlaceholders } from '@/engines/template-engine'
+import { compileTemplate, resolveSnippetData, replacePlaceholders } from '@/engines/template-engine'
 
 describe('compileTemplate', () => {
   it('should compile simple template', () => {
@@ -42,36 +42,6 @@ describe('resolveSnippetData', () => {
 
   it('should return empty data when both are empty', () => {
     expect(resolveSnippetData({}, {})).toEqual({})
-  })
-})
-
-describe('buildSpacingStyle', () => {
-  it('should build correct spacing style', () => {
-    const spacing = {
-      top: { value: 10, unit: 'px' },
-      right: { value: 20, unit: 'px' },
-      bottom: { value: 30, unit: 'px' },
-      left: { value: 40, unit: 'px' },
-    }
-    expect(buildSpacingStyle(spacing)).toBe('margin: 10px 20px 30px 40px;')
-  })
-
-  it('should handle different units', () => {
-    const spacing = {
-      top: { value: 1, unit: 'rem' },
-      right: { value: 50, unit: '%' },
-      bottom: { value: 0, unit: 'px' },
-      left: { value: 0, unit: 'px' },
-    }
-    expect(buildSpacingStyle(spacing)).toBe('margin: 1rem 50% 0px 0px;')
-  })
-})
-
-describe('wrapWithContainer', () => {
-  it('should wrap html with container div', () => {
-    const html = '<p>content</p>'
-    const result = wrapWithContainer(html, 'my-class', 'margin: 10px;')
-    expect(result).toBe('<div class="my-class" style="margin: 10px;"><p>content</p></div>')
   })
 })
 
